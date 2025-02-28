@@ -34,7 +34,7 @@ const EmailSignup: React.FC = () => {
         message: "Thank you for subscribing!",
       });
       setEmail("");
-    } catch (error) {
+    } catch {
       setStatus({
         type: "error",
         message: "Something went wrong. Please try again.",
