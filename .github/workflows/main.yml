@@ -1,0 +1,75 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host key to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy .env file
+        run: |
+          echo "DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}" > .env
+          echo "SSL_EMAIL=${{ secrets.SSL_EMAIL }}" >> .env
+          echo "GENERIC_TIMEZONE=${{ secrets.GENERIC_TIMEZONE }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+          
+          # Copy .env file to server
+          scp .env ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/.env
+
+      - name: Copy configuration files
+        run: |
+          # Copy docker-compose and Dockerfiles
+          scp docker-compose.yaml ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/
+          
+          # Create directories if they don't exist
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "mkdir -p ~/app/landing ~/app/crew/media_org"
+          
+          # Copy Dockerfiles
+          scp landing/Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/landing/
+          scp crew/media_org/Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/crew/media_org/
+
+      - name: Copy landing page files
+        run: |
+          tar -czf landing.tar.gz landing/
+          scp landing.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "cd ~/app && tar -xzf landing.tar.gz && rm landing.tar.gz"
+
+      - name: Copy crewAI files
+        run: |
+          tar -czf crew.tar.gz crew/
+          scp crew.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "cd ~/app && tar -xzf crew.tar.gz && rm crew.tar.gz"
+
+      - name: Deploy and restart containers
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "cd ~/app && \
+          docker-compose build && \
+          docker-compose down && \
+          docker-compose up -d"
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "cd ~/app && docker-compose ps"
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f .env
