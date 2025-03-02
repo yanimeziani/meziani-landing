@@ -1,17 +1,47 @@
 research_task:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
+    Conduct extensive research on {topic} for podcast content.
+    Identify trending subtopics, key insights, and potential narrative angles.
+    Ensure information is current as of {current_year}.
   expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
+    A comprehensive research report including:
+    - Top 5 trending subtopics within {topic}
+    - 3-5 unique sources and their key insights
+    - Potential narrative angles for podcast exploration
   agent: researcher
 
-reporting_task:
+topic_curation_task:
   description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    Review the research findings and curate the most compelling topics.
+    Select subtopics that will create the most engaging podcast narrative.
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A refined topic selection with:
+    - Rationale for topic selection
+    - Key points of interest
+    - Potential interview questions or discussion points
+  agent: topic_curator
+
+script_writing_task:
+  description: >
+    Develop a full podcast script based on the curated topics.
+    Create an engaging, conversational narrative that flows naturally.
+    Include introductions, main content segments, and closing remarks.
+  expected_output: >
+    A complete podcast script formatted for audio production, including:
+    - Intro and outro segments
+    - Main content broken into clear segments
+    - Natural dialogue and conversational flow
+    - Estimated total runtime
+  agent: script_writer
+
+audio_production_task:
+  description: >
+    Provide comprehensive audio production guidelines for the podcast script.
+    Specify recommended voice characteristics, pacing, and audio formatting.
+  expected_output: >
+    Detailed audio production guidelines including:
+    - Recommended voice talent characteristics
+    - Pacing and tone suggestions
+    - Technical audio production specifications
+    - Estimated production complexity
+  agent: audio_director
