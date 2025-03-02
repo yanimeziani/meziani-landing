@@ -19,12 +19,13 @@ class WebSearchTool(BaseTool):
     name: str = "Web Search"
     description: str = "Search the web for current information on a topic using Serper API"
     args_schema: Type[BaseModel] = WebSearchInput
+    api_key: str = None
+    base_url: str = "https://google.serper.dev/search"
     
     def __init__(self, api_key=None):
         """Initialize with optional API key."""
         super().__init__()
         self.api_key = api_key or os.environ.get("SERPER_API_KEY")
-        self.base_url = "https://google.serper.dev/search"
     
     def _run(self, query: str, num_results: int = 5) -> str:
         """

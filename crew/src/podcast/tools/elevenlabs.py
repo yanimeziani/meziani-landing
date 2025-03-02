@@ -22,12 +22,13 @@ class ElevenLabsTool(BaseTool):
     name: str = "ElevenLabs Text-to-Speech"
     description: str = "Convert text to realistic speech using ElevenLabs voices"
     args_schema: Type[BaseModel] = ElevenLabsInput
+    api_key: str = None
+    base_url: str = "https://api.elevenlabs.io/v1"
     
     def __init__(self, api_key=None):
         """Initialize with optional API key."""
         super().__init__()
         self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY")
-        self.base_url = "https://api.elevenlabs.io/v1"
         self.voices = {
             "adam": "pNInz6obpgDQGcFmaJgB",
             "antoni": "ErXwobaYiN019PkySvjV",

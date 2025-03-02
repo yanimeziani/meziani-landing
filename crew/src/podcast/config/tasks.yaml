@@ -3,11 +3,17 @@ research_task:
     Conduct extensive research on {topic} for podcast content.
     Identify trending subtopics, key insights, and potential narrative angles.
     Ensure information is current as of {current_year}.
+    Use the WebSearchTool to find current information.
   expected_output: >
-    A comprehensive research report including:
-    - Top 5 trending subtopics within {topic}
-    - 3-5 unique sources and their key insights
-    - Potential narrative angles for podcast exploration
+    A comprehensive research report as a JSON object with:
+    {
+      "topic": "Main topic",
+      "subtopics": ["Subtopic 1", "Subtopic 2", ...],
+      "sources": [
+        {"title": "Source title", "url": "Source URL", "insights": "Key insights from this source"}
+      ],
+      "angles": ["Narrative angle 1", "Narrative angle 2", ...]
+    }
   agent: researcher
 
 topic_curation_task:
@@ -15,10 +21,14 @@ topic_curation_task:
     Review the research findings and curate the most compelling topics.
     Select subtopics that will create the most engaging podcast narrative.
   expected_output: >
-    A refined topic selection with:
-    - Rationale for topic selection
-    - Key points of interest
-    - Potential interview questions or discussion points
+    A refined topic selection as a JSON object with:
+    {
+      "main_topic": "The refined main topic",
+      "rationale": "Explanation of why this is compelling",
+      "key_points": ["Point 1", "Point 2", ...],
+      "questions": ["Question 1", "Question 2", ...],
+      "target_audience": "Description of ideal audience"
+    }
   agent: topic_curator
 
 script_writing_task:
@@ -38,10 +48,26 @@ audio_production_task:
   description: >
     Provide comprehensive audio production guidelines for the podcast script.
     Specify recommended voice characteristics, pacing, and audio formatting.
+    Use the ElevenLabsTool to convert sample text to audio if needed.
   expected_output: >
-    Detailed audio production guidelines including:
-    - Recommended voice talent characteristics
-    - Pacing and tone suggestions
-    - Technical audio production specifications
-    - Estimated production complexity
+    Detailed audio production guidelines as a JSON object with:
+    {
+      "voice_profiles": {
+        "host1": {"voice_id": "adam", "characteristics": "Description of voice qualities"},
+        "host2": {"voice_id": "bella", "characteristics": "Description of voice qualities"}
+      },
+      "pacing": "Description of pacing throughout the podcast",
+      "tone": "Overall tone recommendations",
+      "audio_specs": {
+        "format": "mp3",
+        "bitrate": "192kbps",
+        "processing": "Recommended audio processing"
+      },
+      "music": {
+        "intro": "Music description",
+        "outro": "Music description",
+        "transitions": "Transition sound description"
+      },
+      "production_notes": "Additional production considerations"
+    }
   agent: audio_director
