@@ -152,10 +152,22 @@ class PodcastCrew():
         # Kickoff the crew and process results
         result = self.crew().kickoff(inputs=inputs)
         
-        # Process and format results
-        return {
-            "research": result.get('research', {}),
-            "summary": result.get('topic_curation', ''),
-            "script": result.get('script_writing', ''),
-            "audio_details": result.get('audio_production', {})
-        }
+        # Check if result is a string or dictionary
+        if isinstance(result, str):
+            # Handle string result
+            if self.callback:
+                self.callback("Received result as string, processing accordingly", "processing")
+            return {
+                "research": {},
+                "summary": result,
+                "script": result,
+                "audio_details": {}
+            }
+        else:
+            # Handle dictionary result
+            return {
+                "research": result.get('research', {}),
+                "summary": result.get('topic_curation', ''),
+                "script": result.get('script_writing', ''),
+                "audio_details": result.get('audio_production', {})
+            }
