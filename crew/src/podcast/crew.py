@@ -209,8 +209,17 @@ class PodcastCrew():
         def task_callback(task_output):
             """Callback for CrewAI tasks"""
             if self.callback:
-                task_name = task_output.get('task_name', 'unknown')
-                self.callback(f"Task completed: {task_name}", task_name.split('_')[0] if '_' in task_name else task_name)
+                # Type check task_output before trying to use .get()
+                if isinstance(task_output, dict):
+                    task_name = task_output.get('task_name', 'unknown')
+                    self.callback(f"Task completed: {task_name}", 
+                                 task_name.split('_')[0] if '_' in task_name else task_name)
+                elif isinstance(task_output, str):
+                    # Handle string task outputs
+                    self.callback(f"Task completed with string output: {task_output[:50]}...", "processing")
+                else:
+                    # Handle other types
+                    self.callback(f"Task completed with output type: {type(task_output).__name__}", "processing")
             return task_output
         
         try:
