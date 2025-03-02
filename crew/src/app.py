@@ -326,6 +326,7 @@ if __name__ == "__main__":
                 f"ElevenLabs: {'Yes' if os.environ.get('ELEVENLABS_API_KEY') else 'No'}")
     logger.info(f"Using model: {os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')}")
     logger.info(f"Memory DB path: {os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')}")
+    logger.info(f"Server starting on http://0.0.0.0:5000")
     
     # Start the Flask app
     app.run(host="0.0.0.0", port=5000, debug=False)

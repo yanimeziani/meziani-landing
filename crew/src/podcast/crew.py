@@ -228,6 +228,16 @@ class PodcastCrew():
             # Run the crew
             results = crew_instance.kickoff(inputs=inputs)
             
+            # Add debug information about the result type
+            if self.callback:
+                result_type = type(results).__name__
+                self.callback(f"CrewAI result type: {result_type}", "debug")
+                
+                # Extra checking for unexpected result types
+                if not isinstance(results, (dict, str)):
+                    self.callback(f"Unexpected result type: {result_type}, converting to string", "debug")
+                    results = str(results)
+            
             # Debug output
             if self.callback:
                 self.callback(f"CrewAI result type: {type(results)}", "debug")
