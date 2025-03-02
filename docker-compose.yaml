@@ -63,15 +63,28 @@ services:
       - traefik.http.routers.crewai.entrypoints=web,websecure
       - traefik.http.routers.crewai.tls.certresolver=mytlschallenge
       - traefik.http.services.crewai.loadbalancer.server.port=5000
+      # Add health check config for Traefik
+      - traefik.http.services.crewai.loadbalancer.healthcheck.path=/health
+      - traefik.http.services.crewai.loadbalancer.healthcheck.interval=30s
+      - traefik.http.services.crewai.loadbalancer.healthcheck.timeout=5s
+      - traefik.http.services.crewai.loadbalancer.healthcheck.retries=3
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - CREWAI_CALLBACKS_ENABLED=${CREWAI_CALLBACKS_ENABLED}
-      - CREWAI_USER_ID=${CREWAI_USER_ID}
-      - CREWAI_MEMORY_DB_PATH=${CREWAI_MEMORY_DB_PATH}
-      - MODEL=${MODEL}
+      - CREWAI_CALLBACKS_ENABLED=${CREWAI_CALLBACKS_ENABLED:-true}
+      - CREWAI_USER_ID=${CREWAI_USER_ID:-default-user}
+      - CREWAI_MEMORY_DB_PATH=${CREWAI_MEMORY_DB_PATH:-/app/data/memory.db}
+      - MODEL=${MODEL:-claude-3-5-sonnet-20240620}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
     volumes:
       - crewai_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - web
 

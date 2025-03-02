@@ -24,11 +24,13 @@ class ElevenLabsTool(BaseTool):
     args_schema: Type[BaseModel] = ElevenLabsInput
     api_key: str = None
     base_url: str = "https://api.elevenlabs.io/v1"
+    voices: dict = None  # Add voices as a field in the class definition
     
     def __init__(self, api_key=None):
         """Initialize with optional API key."""
         super().__init__()
         self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY")
+        # Set voices dictionary
         self.voices = {
             "adam": "pNInz6obpgDQGcFmaJgB",
             "antoni": "ErXwobaYiN019PkySvjV",
@@ -58,7 +60,20 @@ class ElevenLabsTool(BaseTool):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         # Normalize voice ID (handle case where a name is passed instead of ID)
-        voice_id = voice_id.lower()
+        voice_id = voice_id.lower() if voice_id else "adam"
+        
+        # Create default voices dictionary if it doesn't exist
+        if not hasattr(self, 'voices') or self.voices is None:
+            self.voices = {
+                "adam": "pNInz6obpgDQGcFmaJgB",
+                "antoni": "ErXwobaYiN019PkySvjV",
+                "bella": "EXAVITQu4vr4xnSDxMaL",
+                "elli": "MF3mGyEYCl7XYWbV9V6O",
+                "josh": "TxGEqnHWrfWFTfGW9XjX",
+                "rachel": "21m00Tcm4TlvDq8ikWAM",
+                "sam": "yoZ06aMxZJJ28mfd3POQ"
+            }
+            
         if voice_id in self.voices:
             voice_id = self.voices[voice_id]
         

@@ -159,17 +159,34 @@ class PodcastCrew():
         Returns:
             dict: Results of the podcast creation process
         """
-        # Check if API keys are set
+        # Check if API keys are set and validate configuration
         anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
         serper_key = os.environ.get('SERPER_API_KEY')
         elevenlabs_key = os.environ.get('ELEVENLABS_API_KEY')
+        memory_db_path = os.environ.get('CREWAI_MEMORY_DB_PATH')
+        model = os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')
         
-        # Log API key status (without showing the actual keys)
+        # Validate memory DB path
+        if memory_db_path:
+            memory_dir = os.path.dirname(memory_db_path)
+            if not os.path.exists(memory_dir):
+                try:
+                    os.makedirs(memory_dir, exist_ok=True)
+                    if self.callback:
+                        self.callback(f"Created memory directory: {memory_dir}", "debug")
+                except Exception as e:
+                    if self.callback:
+                        self.callback(f"Failed to create memory directory: {str(e)}", "error")
+        
+        # Log configuration status (without showing the actual keys)
         if self.callback:
             self.callback(f"API keys available: Anthropic: {'Yes' if anthropic_key else 'No'}, "
                          f"Serper: {'Yes' if serper_key else 'No'}, "
                          f"ElevenLabs: {'Yes' if elevenlabs_key else 'No'}", "debug")
+            self.callback(f"Using model: {model}", "debug")
+            self.callback(f"Memory DB path: {memory_db_path}", "debug")
         
+        # Check required API key
         if not anthropic_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required but not set")
         

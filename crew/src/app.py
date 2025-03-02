@@ -6,10 +6,39 @@ import time
 from datetime import datetime
 import uuid
 import logging
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Validate required environment variables
+required_env_vars = {
+    'ANTHROPIC_API_KEY': 'Claude API key for CrewAI agents',
+    'MODEL': 'Model name to use for agents',
+    'SERPER_API_KEY': 'API key for web search functionality',
+    'ELEVENLABS_API_KEY': 'API key for text-to-speech conversion',
+    'CREWAI_MEMORY_DB_PATH': 'Path for CrewAI memory storage'
+}
+
+missing_vars = []
+for var, description in required_env_vars.items():
+    if not os.environ.get(var):
+        missing_vars.append(f"{var} ({description})")
+        logger.warning(f"Missing environment variable: {var} - {description}")
+
+if missing_vars:
+    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
+    if os.environ.get('ANTHROPIC_API_KEY') is None:  # Only exit if the critical API key is missing
+        logger.critical("ANTHROPIC_API_KEY is required but not set. Exiting.")
+        sys.exit(1)
+
+# Configure memory DB path
+memory_db_path = os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')
+os.environ['CREWAI_MEMORY_DB_PATH'] = memory_db_path
+
+# Ensure memory DB directory exists
+os.makedirs(os.path.dirname(memory_db_path), exist_ok=True)
 
 app = Flask(__name__)
 
@@ -213,10 +242,41 @@ def serve_audio(filename):
     """Serve generated audio files"""
     return send_from_directory('data/podcasts', filename)
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker"""
+    # Check if API keys are set
+    status = {
+        "status": "healthy",
+        "time": datetime.now().isoformat(),
+        "api_keys": {
+            "anthropic": bool(os.environ.get('ANTHROPIC_API_KEY')),
+            "serper": bool(os.environ.get('SERPER_API_KEY')),
+            "elevenlabs": bool(os.environ.get('ELEVENLABS_API_KEY'))
+        },
+        "memory_db": os.path.exists(os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')),
+        "version": "1.0.0"
+    }
+    
+    # Set overall status
+    if not status['api_keys']['anthropic']:
+        status['status'] = "degraded"
+        status['message'] = "Missing critical API key: ANTHROPIC_API_KEY"
+    
+    return jsonify(status)
+
 if __name__ == "__main__":
     # Create necessary directories
     os.makedirs('data/podcasts', exist_ok=True)
     os.makedirs('data/research', exist_ok=True)
+    
+    # Log startup information
+    logger.info("=== CrewAI Podcast Generator Starting ===")
+    logger.info(f"API Keys configured: Anthropic: {'Yes' if os.environ.get('ANTHROPIC_API_KEY') else 'No'}, " 
+                f"Serper: {'Yes' if os.environ.get('SERPER_API_KEY') else 'No'}, "
+                f"ElevenLabs: {'Yes' if os.environ.get('ELEVENLABS_API_KEY') else 'No'}")
+    logger.info(f"Using model: {os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')}")
+    logger.info(f"Memory DB path: {os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')}")
     
     # Start the Flask app
     app.run(host="0.0.0.0", port=5000, debug=False)
