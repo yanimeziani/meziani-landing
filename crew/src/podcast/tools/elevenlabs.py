@@ -6,7 +6,9 @@ import json
 import random
 import time
 import requests
+import re
 from datetime import datetime
+from pydub import AudioSegment
 
 class ElevenLabsInput(BaseModel):
     """Input schema for ElevenLabsTool."""
@@ -15,6 +17,7 @@ class ElevenLabsInput(BaseModel):
     stability: float = Field(default=0.7, description="Voice stability (0.0 to 1.0)")
     clarity: float = Field(default=0.75, description="Voice clarity (0.0 to 1.0)")
     output_path: str = Field(description="Path to save the generated audio file")
+    language: str = Field(default="fr", description="Language of the text (fr for French)")
 
 class ElevenLabsTool(BaseTool):
     """Tool for converting text to speech using ElevenLabs API."""
@@ -31,26 +34,16 @@ class ElevenLabsTool(BaseTool):
         super().__init__()
         self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY")
         
-        # Initialize with default voices
-        self.voices = {
-            "adam": "pNInz6obpgDQGcFmaJgB",  # Male
-            "antoni": "ErXwobaYiN019PkySvjV",  # Male
-            "bella": "EXAVITQu4vr4xnSDxMaL",  # Female
-            "elli": "MF3mGyEYCl7XYWbV9V6O",   # Female
-            "josh": "TxGEqnHWrfWFTfGW9XjX",   # Male
-            "rachel": "21m00Tcm4TlvDq8ikWAM", # Female
-            "sam": "yoZ06aMxZJJ28mfd3POQ"     # Male
+        # Initialize voice_genders dictionary with only Alex and Simon
+        self.voice_genders = {
+            "alex": "male",
+            "simon": "male"
         }
         
-        # Voice gender mapping for host matching
-        self.voice_genders = {
-            "adam": "male",
-            "antoni": "male",
-            "bella": "female",
-            "elli": "female",
-            "josh": "male",
-            "rachel": "female",
-            "sam": "male"
+        # Initialize with only Alex and Simon voices using the provided IDs
+        self.voices = {
+            "alex": "IPgYtHTNLjC7Bq7IPHrm",   # Hard coded Alex voice ID
+            "simon": "RBhYSNMNu6b2CGZ9Fn1M"   # Hard coded Simon voice ID
         }
         
         # Try to fetch available voices if API key is available
@@ -62,32 +55,9 @@ class ElevenLabsTool(BaseTool):
     
     def _fetch_available_voices(self):
         """Fetch available voices from ElevenLabs API"""
-        if not self.api_key:
-            return
-            
-        try:
-            headers = {"xi-api-key": self.api_key}
-            response = requests.get(f"{self.base_url}/voices", headers=headers)
-            response.raise_for_status()
-            
-            voices_data = response.json()
-            
-            # Update voices dictionary with fetched voices
-            for voice in voices_data.get('voices', []):
-                name = voice.get('name', '').lower()
-                voice_id = voice.get('voice_id')
-                if name and voice_id:
-                    self.voices[name] = voice_id
-                    
-                    # Try to determine gender from tags
-                    tags = [tag.lower() for tag in voice.get('tags', [])]
-                    if 'male' in tags:
-                        self.voice_genders[name] = 'male'
-                    elif 'female' in tags:
-                        self.voice_genders[name] = 'female'
-            
-        except Exception as e:
-            print(f"Error fetching voices: {str(e)}")
+        # We're only using hardcoded Alex and Simon voices, so this method 
+        # doesn't need to do anything
+        return
     
     def get_available_voices(self):
         """Get list of available voices for UI selection"""
@@ -101,66 +71,185 @@ class ElevenLabsTool(BaseTool):
     
     def suggest_voice_for_host(self, host_name, preferred_voice=None):
         """Suggest a voice for a host"""
-        # If a preferred voice is specified, use it
-        if preferred_voice and preferred_voice in self.voices:
-            return preferred_voice
-            
-        # Otherwise randomly select a voice
-        return random.choice(list(self.voices.keys()))
+        # Only two hosts: Alex and Simon
+        if host_name.lower() == "alex":
+            return "alex"
+        else:
+            # For any other host name, use Simon
+            return "simon"
     
     def create_voice_preview(self, voice_name, output_dir="data/podcasts/previews"):
         """Create a voice preview for UI selection"""
         os.makedirs(output_dir, exist_ok=True)
-        preview_text = f"This is a preview of the {voice_name} voice from ElevenLabs."
+        # Use Quebec French with typical expressions
+        preview_text = f"Bonjour! C'est {voice_name}. Tabarnak, c'est pas pire pantoute notre podcast québécois, hein?"
         output_path = f"{output_dir}/{voice_name}_preview.mp3"
         
         result = self._run(
             text=preview_text,
             voice_id=voice_name,
-            output_path=output_path
+            output_path=output_path,
+            language="fr"  # Force French
         )
         
         return json.loads(result)
+    
+    def parse_podcast_script(self, script, hosts):
+        """Parse podcast script into segments by host."""
+        segments = []
+        current_text = ""
+        current_host = None
+        
+        # Create a regex pattern to match any host
+        hosts_pattern = '|'.join([re.escape(host) for host in hosts])
+        pattern = f"({hosts_pattern}):\\s*"
+        
+        # Split the script by host indicators
+        parts = re.split(f"({pattern})", script)
+        
+        # Process the split parts
+        i = 0
+        while i < len(parts):
+            if i + 1 < len(parts) and parts[i+1].strip().endswith(':'):
+                # Found a host indicator
+                if current_host and current_text.strip():
+                    segments.append({"host": current_host, "text": current_text.strip()})
+                
+                # Extract the host name without the colon
+                current_host = parts[i+1].strip()[:-1]
+                current_text = parts[i+2] if i+2 < len(parts) else ""
+                i += 3
+            else:
+                # Continuation of text or unattributed text
+                if not current_host:
+                    # Handle text before any host is specified (e.g., intro)
+                    current_host = "narrator"
+                current_text += parts[i]
+                i += 1
+        
+        # Add the last segment if there is one
+        if current_host and current_text.strip():
+            segments.append({"host": current_host, "text": current_text.strip()})
+            
+        return segments
         
     def process_podcast_script(self, script, hosts, output_path="data/podcasts/podcast.mp3"):
         """
-        Process a full podcast script and generate audio with dynamic host voice assignment.
+        Process a full podcast script and generate audio with Alex and Simon voices.
+        Script will be in French with a Quebec touch.
         """
         # Ensure output directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
-        # Assign voices to hosts
+        # Assign voices to hosts - only Alex and Simon
         host_voices = {}
-        available_voices = list(self.voices.keys())
-        random.shuffle(available_voices)  # Randomize for variety
-        
         for i, host in enumerate(hosts):
-            # Pick a voice for this host
-            if i < len(available_voices):
-                voice = available_voices[i]  # Use a unique voice if available
+            if i == 0 or host.lower() == "alex":
+                host_voices[host] = "alex"
             else:
-                voice = random.choice(list(self.voices.keys()))
-            host_voices[host] = voice
+                host_voices[host] = "simon"
         
-        # In a real implementation, this would:
-        # 1. Parse the script to separate by speaker
-        # 2. Generate audio for each segment with the appropriate voice
-        # 3. Combine the segments into a single audio file
-        # 4. Add sound effects or music
+        # Parse the script to separate by speaker
+        segments = self.parse_podcast_script(script, hosts)
         
-        # For this demo, we'll simulate the process
-        time.sleep(random.uniform(3.0, 5.0))
+        # If we don't have a valid API key, simulate the process
+        if not self.api_key:
+            return self._simulate_podcast_processing(segments, host_voices, output_path)
+            
+        try:
+            # Generate audio for each segment with the appropriate voice
+            temp_audio_files = []
+            combined_audio = None
+            
+            for i, segment in enumerate(segments):
+                host = segment["host"]
+                text = segment["text"]
+                
+                # Get voice for this host (default to first available if not found)
+                voice = host_voices.get(host, list(self.voices.keys())[0])
+                
+                # Generate temp file path
+                temp_file = f"{output_path.replace('.mp3', '')}_segment_{i}.mp3"
+                
+                # Generate audio for this segment (in French)
+                result = json.loads(self._run(
+                    text=text,
+                    voice_id=voice,
+                    output_path=temp_file,
+                    language="fr"  # Force French language
+                ))
+                
+                if result["success"]:
+                    temp_audio_files.append(temp_file)
+                    
+                    # Add to combined audio
+                    segment_audio = AudioSegment.from_mp3(temp_file)
+                    if combined_audio is None:
+                        combined_audio = segment_audio
+                    else:
+                        combined_audio += segment_audio
+                else:
+                    print(f"Failed to generate audio for segment {i}: {result.get('message')}")
+            
+            # Save the combined audio
+            if combined_audio:
+                combined_audio.export(output_path, format="mp3")
+                
+                # Clean up temp files
+                for temp_file in temp_audio_files:
+                    try:
+                        os.remove(temp_file)
+                    except Exception as e:
+                        print(f"Failed to remove temp file {temp_file}: {str(e)}")
+                
+                # Create metadata
+                metadata = {
+                    "hosts": hosts,
+                    "host_voices": host_voices,
+                    "script_length": len(script),
+                    "segments": len(segments),
+                    "language": "fr",
+                    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "output_path": output_path,
+                    "audio_url": f"/audio/{os.path.basename(output_path)}"
+                }
+                
+                metadata_path = output_path.replace(".mp3", "_metadata.json")
+                with open(metadata_path, "w") as f:
+                    json.dump(metadata, f, indent=2)
+                
+                return {
+                    "success": True,
+                    "message": f"Podcast audio generated and saved to {output_path}",
+                    "metadata_path": metadata_path,
+                    "audio_url": f"/audio/{os.path.basename(output_path)}",
+                    "host_voices": host_voices
+                }
+            else:
+                raise Exception("Failed to generate any audio segments")
+                
+        except Exception as e:
+            print(f"Error processing podcast script: {str(e)}")
+            return self._simulate_podcast_processing(segments, host_voices, output_path)
+    
+    def _simulate_podcast_processing(self, segments, host_voices, output_path):
+        """Simulate podcast processing when API key is not available or API fails."""
+        # Simulate processing time based on script length
+        total_text_length = sum(len(segment["text"]) for segment in segments)
+        process_time = 1.0 + (total_text_length / 500) * random.uniform(0.5, 1.5)
+        time.sleep(process_time)
         
         # Create a metadata file with information about the podcast
         metadata = {
-            "hosts": hosts,
+            "hosts": list(host_voices.keys()),
             "host_voices": host_voices,
-            "script_length": len(script),
-            "segments": len(script.split(f"{hosts[0]}:")) + (len(script.split(f"{hosts[1]}:")) if len(hosts) > 1 else 0),
+            "script_length": total_text_length,
+            "segments": len(segments),
+            "language": "fr",
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "output_path": output_path,
             "audio_url": f"/audio/{os.path.basename(output_path)}",
-            "simulated": not self.api_key
+            "simulated": True
         }
         
         metadata_path = output_path.replace(".mp3", "_metadata.json")
@@ -168,26 +257,19 @@ class ElevenLabsTool(BaseTool):
             json.dump(metadata, f, indent=2)
             
         # Create an empty MP3 file or use the API to generate real audio
-        if self.api_key:
-            # Here you would implement the actual audio generation with the assigned voices
-            # For now, just create a dummy file
-            with open(output_path, "wb") as f:
-                f.write(b'\xFF\xFB\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        else:
-            # Create an empty MP3 file for simulation
-            with open(output_path, "wb") as f:
-                f.write(b'\xFF\xFB\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        with open(output_path, "wb") as f:
+            f.write(b'\xFF\xFB\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         
         return {
             "success": True,
-            "message": f"Podcast audio generated and saved to {output_path}",
+            "message": f"Simulated podcast audio generated and saved to {output_path}",
             "metadata_path": metadata_path,
             "audio_url": f"/audio/{os.path.basename(output_path)}",
             "host_voices": host_voices
         }
     
     def _run(self, text: str, voice_id: str, stability: float = 0.7, 
-             clarity: float = 0.75, output_path: str = None) -> str:
+             clarity: float = 0.75, output_path: str = None, language: str = "fr") -> str:
         """
         Convert text to speech using ElevenLabs API.
         
@@ -197,35 +279,33 @@ class ElevenLabsTool(BaseTool):
             stability: Voice stability (0.0 to 1.0)
             clarity: Voice clarity (0.0 to 1.0)
             output_path: Path to save the generated audio file
+            language: Language of the text (default: fr for French)
             
         Returns:
             JSON string with the result
         """
         # Ensure output directory exists
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        if output_path:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_path = f"data/audio/elevenlabs_{timestamp}.mp3"
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         # Normalize voice ID (handle case where a name is passed instead of ID)
-        voice_id = voice_id.lower() if voice_id else "adam"
+        if voice_id:
+            voice_id = voice_id.lower()
+        else:
+            voice_id = "adam"  # Default voice
         
-        # Create default voices dictionary if it doesn't exist
-        if not hasattr(self, 'voices') or self.voices is None:
-            self.voices = {
-                "adam": "pNInz6obpgDQGcFmaJgB",
-                "antoni": "ErXwobaYiN019PkySvjV",
-                "bella": "EXAVITQu4vr4xnSDxMaL",
-                "elli": "MF3mGyEYCl7XYWbV9V6O",
-                "josh": "TxGEqnHWrfWFTfGW9XjX",
-                "rachel": "21m00Tcm4TlvDq8ikWAM",
-                "sam": "yoZ06aMxZJJ28mfd3POQ"
-            }
-            
+        # Get voice ID from name if needed
         if voice_id in self.voices:
             voice_id = self.voices[voice_id]
         
         # Check if API key is available
         if not self.api_key:
             # Fall back to simulated results if no API key
-            return self._simulate_tts(text, voice_id, stability, clarity, output_path)
+            return self._simulate_tts(text, voice_id, stability, clarity, output_path, language)
         
         try:
             # Prepare request headers and data
@@ -237,7 +317,7 @@ class ElevenLabsTool(BaseTool):
             
             data = {
                 "text": text,
-                "model_id": "eleven_monolingual_v1",
+                "model_id": "eleven_multilingual_v2",  # Use multilingual model for French
                 "voice_settings": {
                     "stability": stability,
                     "similarity_boost": clarity
@@ -245,7 +325,7 @@ class ElevenLabsTool(BaseTool):
             }
             
             # Make the API request
-            url = f"{self.base_url}/text-to-speech/{voice_id}"
+            url = f"{self.base_url}/text-to-speech/{voice_id}/stream"  # Use streaming endpoint
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             
@@ -258,6 +338,7 @@ class ElevenLabsTool(BaseTool):
                 "success": True,
                 "text_length": len(text),
                 "voice_id": voice_id,
+                "language": language,
                 "stability": stability,
                 "clarity": clarity,
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -278,9 +359,10 @@ class ElevenLabsTool(BaseTool):
         except Exception as e:
             # Log the error and fall back to simulated results
             print(f"ElevenLabs API error: {str(e)}")
-            return self._simulate_tts(text, voice_id, stability, clarity, output_path)
+            return self._simulate_tts(text, voice_id, stability, clarity, output_path, language)
     
-    def _simulate_tts(self, text: str, voice_id: str, stability: float, clarity: float, output_path: str) -> str:
+    def _simulate_tts(self, text: str, voice_id: str, stability: float, clarity: float, 
+                     output_path: str, language: str = "fr") -> str:
         """Simulate text-to-speech conversion when API key is not available or API fails."""
         # Simulate processing time based on text length
         process_time = 0.5 + (len(text) / 100) * random.uniform(0.5, 1.5)
@@ -291,6 +373,7 @@ class ElevenLabsTool(BaseTool):
             "success": True,
             "text_length": len(text),
             "voice_id": voice_id,
+            "language": language,
             "stability": stability,
             "clarity": clarity,
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

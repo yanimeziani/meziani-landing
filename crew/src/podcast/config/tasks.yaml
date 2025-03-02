@@ -1,73 +1,81 @@
 research_task:
   description: >
-    Conduct extensive research on {topic} for podcast content.
-    Identify trending subtopics, key insights, and potential narrative angles.
-    Ensure information is current as of {current_year}.
-    Use the WebSearchTool to find current information.
+    Effectuez des recherches approfondies sur {topic} pour le contenu du podcast.
+    Identifiez les sous-sujets tendance, les perspectives clés et les angles narratifs potentiels.
+    Assurez-vous que les informations sont à jour en {current_year}.
+    Utilisez le WebSearchTool pour trouver des informations actuelles.
+    Tous les résultats doivent être en français avec un style québécois.
   expected_output: >
-    A comprehensive research report as a JSON object with:
+    Un rapport de recherche complet sous forme d'objet JSON avec:
     {
-      "topic": "Main topic",
-      "subtopics": ["Subtopic 1", "Subtopic 2", ...],
+      "sujet": "Sujet principal",
+      "sous_sujets": ["Sous-sujet 1", "Sous-sujet 2", ...],
       "sources": [
-        {"title": "Source title", "url": "Source URL", "insights": "Key insights from this source"}
+        {"titre": "Titre de la source", "url": "URL de la source", "perspectives": "Perspectives clés de cette source"}
       ],
-      "angles": ["Narrative angle 1", "Narrative angle 2", ...]
+      "angles": ["Angle narratif 1", "Angle narratif 2", ...]
     }
   agent: researcher
 
 topic_curation_task:
   description: >
-    Review the research findings and curate the most compelling topics.
-    Select subtopics that will create the most engaging podcast narrative.
+    Examinez les résultats de recherche et sélectionnez les sujets les plus captivants.
+    Choisissez des sous-sujets qui créeront le récit de podcast le plus engageant.
+    Assurez-vous que tout est en français québécois.
   expected_output: >
-    A refined topic selection as a JSON object with:
+    Une sélection de sujet affinée sous forme d'objet JSON avec:
     {
-      "main_topic": "The refined main topic",
-      "rationale": "Explanation of why this is compelling",
-      "key_points": ["Point 1", "Point 2", ...],
+      "sujet_principal": "Le sujet principal affiné",
+      "justification": "Explication de pourquoi c'est captivant",
+      "points_clés": ["Point 1", "Point 2", ...],
       "questions": ["Question 1", "Question 2", ...],
-      "target_audience": "Description of ideal audience"
+      "public_cible": "Description du public idéal"
     }
   agent: topic_curator
 
 script_writing_task:
   description: >
-    Develop a full podcast script based on the curated topics.
-    Create an engaging, conversational narrative that flows naturally.
-    Include introductions, main content segments, and closing remarks.
+    Développez un script complet de podcast basé sur les sujets sélectionnés.
+    Créez un récit conversationnel et engageant qui s'écoule naturellement.
+    Incluez des introductions, des segments de contenu principal et des remarques finales.
+    Le script DOIT être entièrement en français québécois avec des expressions locales.
+    Créez un dialogue entre Alex et Simon uniquement.
   expected_output: >
-    A complete podcast script formatted for audio production, including:
-    - Intro and outro segments
-    - Main content broken into clear segments
-    - Natural dialogue and conversational flow
-    - Estimated total runtime
+    Un script complet de podcast formaté pour la production audio, comprenant:
+    - Segments d'intro et d'outro
+    - Contenu principal divisé en segments clairs
+    - Dialogue naturel et flux conversationnel entre Alex et Simon
+    - Durée totale estimée
+    - Expressions québécoises authentiques
   agent: script_writer
 
 audio_production_task:
   description: >
-    Provide comprehensive audio production guidelines for the podcast script.
-    Specify recommended voice characteristics, pacing, and audio formatting.
-    Use the ElevenLabsTool to convert sample text to audio if needed.
+    Fournissez des directives complètes de production audio pour le script du podcast.
+    Précisez les caractéristiques vocales recommandées, le rythme et le formatage audio.
+    Utilisez l'ElevenLabsTool pour convertir du texte d'exemple en audio si nécessaire.
+    Assurez-vous que les voix sont configurées pour le français québécois.
+    Utilisez uniquement les voix Alex et Simon.
   expected_output: >
-    Detailed audio production guidelines as a JSON object with:
+    Directives détaillées de production audio sous forme d'objet JSON avec:
     {
-      "voice_profiles": {
-        "host1": {"voice_id": "adam", "characteristics": "Description of voice qualities"},
-        "host2": {"voice_id": "bella", "characteristics": "Description of voice qualities"}
+      "profils_voix": {
+        "Alex": {"voice_id": "alex", "caracteristiques": "Description des qualités vocales"},
+        "Simon": {"voice_id": "simon", "caracteristiques": "Description des qualités vocales"}
       },
-      "pacing": "Description of pacing throughout the podcast",
-      "tone": "Overall tone recommendations",
-      "audio_specs": {
+      "rythme": "Description du rythme tout au long du podcast",
+      "ton": "Recommandations générales de ton",
+      "specs_audio": {
         "format": "mp3",
         "bitrate": "192kbps",
-        "processing": "Recommended audio processing"
+        "traitement": "Traitement audio recommandé"
       },
-      "music": {
-        "intro": "Music description",
-        "outro": "Music description",
-        "transitions": "Transition sound description"
+      "musique": {
+        "intro": "Description de la musique",
+        "outro": "Description de la musique",
+        "transitions": "Description des sons de transition"
       },
-      "production_notes": "Additional production considerations"
+      "notes_production": "Considérations supplémentaires de production",
+      "accentuation_quebecoise": "Conseils pour renforcer l'accent québécois"
     }
   agent: audio_director
