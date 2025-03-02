@@ -31,15 +31,6 @@ jobs:
           echo "SSL_EMAIL=${{ secrets.SSL_EMAIL }}" >> .env
           echo "GENERIC_TIMEZONE=${{ secrets.GENERIC_TIMEZONE }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-<<<<<<< HEAD
-=======
-          echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
->>>>>>> 890b48e (FIXES)
-          echo "GITHUB_USERNAME=${{ secrets.GITHUB_USERNAME }}" >> .env
-          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> .env
-          
-          # Create app directory if it doesn't exist
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "mkdir -p ~/app"
           
           # Copy .env file to server
           scp .env ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/.env
