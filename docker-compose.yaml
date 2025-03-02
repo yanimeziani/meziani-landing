@@ -69,6 +69,7 @@ services:
       - CREWAI_CALLBACKS_ENABLED=${CREWAI_CALLBACKS_ENABLED}
       - CREWAI_USER_ID=${CREWAI_USER_ID}
       - CREWAI_MEMORY_DB_PATH=${CREWAI_MEMORY_DB_PATH}
+      - MODEL=${MODEL}
     volumes:
       - crewai_data:/app/data
     networks:
