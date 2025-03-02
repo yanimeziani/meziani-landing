@@ -51,29 +51,31 @@ services:
     networks:
       - web
 
-  media-org:
+  crewai:
     build:
-      context: ./crew/media_org
+      context: ./crew
       dockerfile: Dockerfile
     restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.routers.media-org.rule=Host(`app.${DOMAIN_NAME}`)
-      - traefik.http.routers.media-org.tls=true
-      - traefik.http.routers.media-org.entrypoints=web,websecure
-      - traefik.http.routers.media-org.tls.certresolver=mytlschallenge
-      - traefik.http.services.media-org.loadbalancer.server.port=8000
+      - traefik.http.routers.crewai.rule=Host(`crew.${DOMAIN_NAME}`)
+      - traefik.http.routers.crewai.tls=true
+      - traefik.http.routers.crewai.entrypoints=web,websecure
+      - traefik.http.routers.crewai.tls.certresolver=mytlschallenge
+      - traefik.http.services.crewai.loadbalancer.server.port=5000
     environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
-      - media_org_data:/app/data
+      - crewai_data:/app/data
     networks:
       - web
 
 volumes:
   traefik_data:
     external: true
-  media_org_data:
+  crewai_data:
+    external: true
 
 networks:
   web:

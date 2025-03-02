@@ -1,0 +1,20 @@
+[project]
+name = "docker_crew_template"
+version = "0.1.0"
+description = "docker_crew_template using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<=3.13"
+dependencies = [
+    "crewai[tools]>=0.80.0,<1.0.0"
+]
+
+[project.scripts]
+docker_crew_template = "docker_crew_template.main:run"
+run_crew = "docker_crew_template.main:run"
+train = "docker_crew_template.main:train"
+replay = "docker_crew_template.main:replay"
+test = "docker_crew_template.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
