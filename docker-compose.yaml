@@ -75,7 +75,6 @@ volumes:
   traefik_data:
     external: true
   crewai_data:
-    external: true
 
 networks:
   web:
