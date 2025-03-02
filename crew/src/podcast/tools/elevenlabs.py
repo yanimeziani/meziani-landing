@@ -91,6 +91,18 @@ class ElevenLabsTool(BaseTool):
     
     def get_available_voices(self):
         """Get list of available voices for UI selection"""
+        # Ensure voice_genders exists
+        if not hasattr(self, 'voice_genders') or self.voice_genders is None:
+            self.voice_genders = {
+                "adam": "male",
+                "antoni": "male",
+                "bella": "female",
+                "elli": "female",
+                "josh": "male",
+                "rachel": "female",
+                "sam": "male"
+            }
+            
         voice_options = []
         for name, voice_id in self.voices.items():
             gender = self.voice_genders.get(name, 'unknown')
@@ -103,6 +115,18 @@ class ElevenLabsTool(BaseTool):
     
     def suggest_voice_for_host(self, host_name, preferred_gender=None):
         """Suggest a voice for a host based on name and preferred gender"""
+        # Ensure voice_genders exists
+        if not hasattr(self, 'voice_genders') or self.voice_genders is None:
+            self.voice_genders = {
+                "adam": "male",
+                "antoni": "male",
+                "bella": "female",
+                "elli": "female",
+                "josh": "male",
+                "rachel": "female",
+                "sam": "male"
+            }
+            
         # Simple gender detection based on common name endings
         # This is very simplistic - in production, use a proper name-gender API
         if not preferred_gender:

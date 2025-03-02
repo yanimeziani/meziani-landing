@@ -222,52 +222,14 @@ document.addEventListener('DOMContentLoaded', function() {
             host1Select.appendChild(autoOption.cloneNode(true));
             host2Select.appendChild(autoOption);
             
-            // Group voices by gender
-            const maleVoices = data.voices.filter(v => v.gender === 'male');
-            const femaleVoices = data.voices.filter(v => v.gender === 'female');
-            const otherVoices = data.voices.filter(v => v.gender !== 'male' && v.gender !== 'female');
-            
-            // Add male voices group
-            if (maleVoices.length > 0) {
-              const maleGroup = document.createElement('optgroup');
-              maleGroup.label = 'Male Voices';
-              maleVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name.toLowerCase();
-                option.textContent = voice.name;
-                maleGroup.appendChild(option);
-              });
-              host1Select.appendChild(maleGroup.cloneNode(true));
-              host2Select.appendChild(maleGroup);
-            }
-            
-            // Add female voices group
-            if (femaleVoices.length > 0) {
-              const femaleGroup = document.createElement('optgroup');
-              femaleGroup.label = 'Female Voices';
-              femaleVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name.toLowerCase();
-                option.textContent = voice.name;
-                femaleGroup.appendChild(option);
-              });
-              host1Select.appendChild(femaleGroup.cloneNode(true));
-              host2Select.appendChild(femaleGroup);
-            }
-            
-            // Add other voices if any
-            if (otherVoices.length > 0) {
-              const otherGroup = document.createElement('optgroup');
-              otherGroup.label = 'Other Voices';
-              otherVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name.toLowerCase();
-                option.textContent = voice.name;
-                otherGroup.appendChild(option);
-              });
-              host1Select.appendChild(otherGroup.cloneNode(true));
-              host2Select.appendChild(otherGroup);
-            }
+            // Add all available voices
+            data.voices.forEach(voice => {
+              const option = document.createElement('option');
+              option.value = voice.name.toLowerCase();
+              option.textContent = voice.name;
+              host1Select.appendChild(option.cloneNode(true));
+              host2Select.appendChild(option);
+            });
           }
         })
         .catch(error => {
