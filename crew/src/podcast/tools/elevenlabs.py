@@ -125,24 +125,21 @@ class ElevenLabsTool(BaseTool):
     def process_podcast_script(self, script, hosts, output_path="data/podcasts/podcast.mp3"):
         """
         Process a full podcast script and generate audio with dynamic host voice assignment.
-        
-        Args:
-            script (str): The full podcast script with host labels
-            hosts (list): List of host names
-            output_path (str): Path to save the final audio file
-            
-        Returns:
-            dict: Information about the generated podcast
         """
         # Ensure output directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         # Assign voices to hosts
         host_voices = {}
+        available_voices = list(self.voices.keys())
+        random.shuffle(available_voices)  # Randomize for variety
+        
         for i, host in enumerate(hosts):
-            # Alternate between male and female voices for contrast
-            preferred_gender = 'male' if i % 2 == 0 else 'female'
-            voice = self.suggest_voice_for_host(host, preferred_gender)
+            # Pick a voice for this host
+            if i < len(available_voices):
+                voice = available_voices[i]  # Use a unique voice if available
+            else:
+                voice = random.choice(list(self.voices.keys()))
             host_voices[host] = voice
         
         # In a real implementation, this would:
