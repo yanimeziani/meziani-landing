@@ -1,4 +1,4 @@
-crewai==0.80.0
-crewai-tools==0.14.0
-flask==2.0.1
-langchain-anthropic==0.1.1
+crewai
+crewai-tools
+flask
+langchain-anthropic
