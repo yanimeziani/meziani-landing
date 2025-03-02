@@ -119,7 +119,7 @@ def run_podcast_job(job):
         job.start()
         
         # Import podcast crew - do this here to avoid circular imports
-        from crew.podcast.src.podcast.crew import PodcastCrew
+        from podcast.src.podcast.crew import PodcastCrew
         
         # Research stage
         job.add_update("Starting research on trending topics", "research")
@@ -317,7 +317,7 @@ def health_check():
 @app.route('/api/voices')
 def list_voices():
     """List available text-to-speech voices"""
-    from podcast.tools.elevenlabs import ElevenLabsTool
+    from podcast.src.podcast.tools.elevenlabs import ElevenLabsTool
     
     try:
         tool = ElevenLabsTool()
@@ -330,7 +330,7 @@ def list_voices():
 @app.route('/api/voice-preview/<voice_name>')
 def voice_preview(voice_name):
     """Generate a preview of a specific voice"""
-    from podcast.tools.elevenlabs import ElevenLabsTool
+    from podcast.src.podcast.tools.elevenlabs import ElevenLabsTool
     
     try:
         tool = ElevenLabsTool()

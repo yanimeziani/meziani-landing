@@ -15,6 +15,15 @@ class PodcastCrew():
 
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
+    
+    # Add a method to ensure config is properly loaded as dict
+    def _ensure_config_dict(self, config):
+        """Ensure that config is a dictionary"""
+        if isinstance(config, str):
+            return {"description": config}
+        elif not isinstance(config, dict):
+            return {"description": str(config)}
+        return config
 
     def __init__(self, topic, hosts=None, job_id=None, callback=None):
         """
@@ -33,8 +42,23 @@ class PodcastCrew():
 
     @agent
     def researcher(self) -> Agent:
+        # Get researcher config safely
+        agent_config = self.agents_config.get('researcher', {})
+        name = role = goal = backstory = ""
+        
+        # Extract agent properties directly
+        if isinstance(agent_config, dict):
+            role = agent_config.get('role', f"Spécialiste de recherche sur {self.topic}")
+            goal = agent_config.get('goal', "Effectuer des recherches complètes sur le sujet du podcast")
+            backstory = agent_config.get('backstory', "Vous êtes un chercheur québécois spécialisé en recherche d'information")
+        elif isinstance(agent_config, str):
+            role = agent_config
+            
+        # Create agent with direct properties instead of config
         return Agent(
-            config=self.agents_config['researcher'],
+            role=role,
+            goal=goal,
+            backstory=backstory,
             verbose=True,
             llm_config={
                 "provider": "anthropic",
@@ -48,8 +72,23 @@ class PodcastCrew():
 
     @agent
     def topic_curator(self) -> Agent:
+        # Get topic_curator config safely
+        agent_config = self.agents_config.get('topic_curator', {})
+        name = role = goal = backstory = ""
+        
+        # Extract agent properties directly
+        if isinstance(agent_config, dict):
+            role = agent_config.get('role', "Curateur de sujets de podcast")
+            goal = agent_config.get('goal', "Sélectionner et affiner les sujets les plus captivants")
+            backstory = agent_config.get('backstory', "Vous avez un sens aigu pour identifier les sujets tendance québécois")
+        elif isinstance(agent_config, str):
+            role = agent_config
+            
+        # Create agent with direct properties instead of config
         return Agent(
-            config=self.agents_config['topic_curator'],
+            role=role,
+            goal=goal,
+            backstory=backstory,
             verbose=True,
             llm_config={
                 "provider": "anthropic",
@@ -63,8 +102,23 @@ class PodcastCrew():
 
     @agent
     def script_writer(self) -> Agent:
+        # Get script_writer config safely
+        agent_config = self.agents_config.get('script_writer', {})
+        name = role = goal = backstory = ""
+        
+        # Extract agent properties directly
+        if isinstance(agent_config, dict):
+            role = agent_config.get('role', "Rédacteur de scripts de podcast")
+            goal = agent_config.get('goal', "Transformer les résultats de recherche en un script conversationnel")
+            backstory = agent_config.get('backstory', "Vous maîtrisez le français québécois et ses expressions colorées")
+        elif isinstance(agent_config, str):
+            role = agent_config
+            
+        # Create agent with direct properties instead of config
         return Agent(
-            config=self.agents_config['script_writer'],
+            role=role,
+            goal=goal,
+            backstory=backstory,
             verbose=True,
             llm_config={
                 "provider": "anthropic",
@@ -78,8 +132,23 @@ class PodcastCrew():
 
     @agent
     def audio_director(self) -> Agent:
+        # Get audio_director config safely
+        agent_config = self.agents_config.get('audio_director', {})
+        name = role = goal = backstory = ""
+        
+        # Extract agent properties directly
+        if isinstance(agent_config, dict):
+            role = agent_config.get('role', "Spécialiste de production audio de podcast")
+            goal = agent_config.get('goal', "Fournir des conseils pour la production audio du podcast")
+            backstory = agent_config.get('backstory', "Vous connaissez les nuances de l'accent québécois")
+        elif isinstance(agent_config, str):
+            role = agent_config
+            
+        # Create agent with direct properties instead of config
         return Agent(
-            config=self.agents_config['audio_director'],
+            role=role,
+            goal=goal,
+            backstory=backstory,
             verbose=True,
             llm_config={
                 "provider": "anthropic",
@@ -93,10 +162,21 @@ class PodcastCrew():
 
     @task
     def research_task(self) -> Task:
-        from podcast.tools.web_search import WebSearchTool
+        from podcast.src.podcast.tools.web_search import WebSearchTool
         
+        # Bypass the config argument completely and use description directly
+        # This avoids the 'str' object has no attribute 'get' error in CrewAI
+        task_config = self.tasks_config.get('research_task', {})
+        description = ""
+        if isinstance(task_config, dict) and 'description' in task_config:
+            description = task_config['description']
+        elif isinstance(task_config, str):
+            description = task_config
+        else:
+            description = f"Research on {self.topic}"
+            
         return Task(
-            config=self.tasks_config['research_task'],
+            description=description,  # Use description directly instead of config
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             tools=[WebSearchTool()]
@@ -104,8 +184,18 @@ class PodcastCrew():
 
     @task
     def topic_curation_task(self) -> Task:
+        # Bypass the config argument completely and use description directly
+        task_config = self.tasks_config.get('topic_curation_task', {})
+        description = ""
+        if isinstance(task_config, dict) and 'description' in task_config:
+            description = task_config['description']
+        elif isinstance(task_config, str):
+            description = task_config
+        else:
+            description = f"Curate topics about {self.topic}"
+            
         return Task(
-            config=self.tasks_config['topic_curation_task'],
+            description=description,  # Use description directly instead of config
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             expected_output=dict
@@ -113,8 +203,18 @@ class PodcastCrew():
 
     @task
     def script_writing_task(self) -> Task:
+        # Bypass the config argument completely and use description directly
+        task_config = self.tasks_config.get('script_writing_task', {})
+        description = ""
+        if isinstance(task_config, dict) and 'description' in task_config:
+            description = task_config['description']
+        elif isinstance(task_config, str):
+            description = task_config
+        else:
+            description = f"Write a podcast script in French Quebec style about {self.topic} for hosts {self.hosts[0]} and {self.hosts[1]}"
+            
         return Task(
-            config=self.tasks_config['script_writing_task'],
+            description=description,  # Use description directly instead of config
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             expected_output=str
@@ -122,10 +222,20 @@ class PodcastCrew():
 
     @task
     def audio_production_task(self) -> Task:
-        from podcast.tools.elevenlabs import ElevenLabsTool
+        from podcast.src.podcast.tools.elevenlabs import ElevenLabsTool
         
+        # Bypass the config argument completely and use description directly
+        task_config = self.tasks_config.get('audio_production_task', {})
+        description = ""
+        if isinstance(task_config, dict) and 'description' in task_config:
+            description = task_config['description']
+        elif isinstance(task_config, str):
+            description = task_config
+        else:
+            description = f"Create audio production guidelines for a French Quebec podcast about {self.topic} using ElevenLabs voices Alex and Simon"
+            
         return Task(
-            config=self.tasks_config['audio_production_task'],
+            description=description,  # Use description directly instead of config
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             tools=[ElevenLabsTool()],
@@ -258,6 +368,15 @@ class PodcastCrew():
                 self.callback("Starting CrewAI podcast generation process", "processing")
             
             # Run the crew
+            if self.callback:
+                self.callback("Starting CrewAI execution with inputs: " + str(inputs), "debug")
+                
+            # Add extra debugging for task config
+            if self.callback:
+                # Log config type for each task
+                for task_name, task_config in self.tasks_config.items():
+                    self.callback(f"Task config '{task_name}' is type: {type(task_config).__name__}", "debug")
+                
             results = crew_instance.kickoff(inputs=inputs)
             
             # Debug the results in detail
