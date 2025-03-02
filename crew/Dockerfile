@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir flask  # Add Flask for the dashboard
 
 # Explicitly install crewAI with required dependencies
-RUN pip install --no-cache-dir crewai[anthropic] memory-tool pyarrow
+RUN pip install --no-cache-dir crewai[anthropic] pyarrow
 
 # Set environment variables
 ENV PYTHONPATH=/app/src
