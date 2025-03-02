@@ -5,6 +5,7 @@ import os
 import json
 import random
 import time
+import requests
 from datetime import datetime
 
 class ElevenLabsInput(BaseModel):
@@ -26,8 +27,9 @@ class ElevenLabsTool(BaseTool):
         """Initialize with optional API key."""
         super().__init__()
         self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY")
+        self.base_url = "https://api.elevenlabs.io/v1"
         self.voices = {
-            "adam": "pNInz6obpgDQGcFmaJgB",  # Example voice IDs
+            "adam": "pNInz6obpgDQGcFmaJgB",
             "antoni": "ErXwobaYiN019PkySvjV",
             "bella": "EXAVITQu4vr4xnSDxMaL",
             "elli": "MF3mGyEYCl7XYWbV9V6O",
@@ -39,10 +41,17 @@ class ElevenLabsTool(BaseTool):
     def _run(self, text: str, voice_id: str, stability: float = 0.7, 
              clarity: float = 0.75, output_path: str = None) -> str:
         """
-        Simulates text-to-speech conversion using ElevenLabs.
+        Convert text to speech using ElevenLabs API.
         
-        In a production environment, this would use the actual ElevenLabs API.
-        For this demo, we'll simulate the process.
+        Args:
+            text: The text to convert to speech
+            voice_id: The voice ID to use
+            stability: Voice stability (0.0 to 1.0)
+            clarity: Voice clarity (0.0 to 1.0)
+            output_path: Path to save the generated audio file
+            
+        Returns:
+            JSON string with the result
         """
         # Ensure output directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -51,13 +60,72 @@ class ElevenLabsTool(BaseTool):
         voice_id = voice_id.lower()
         if voice_id in self.voices:
             voice_id = self.voices[voice_id]
+        
+        # Check if API key is available
+        if not self.api_key:
+            # Fall back to simulated results if no API key
+            return self._simulate_tts(text, voice_id, stability, clarity, output_path)
+        
+        try:
+            # Prepare request headers and data
+            headers = {
+                "xi-api-key": self.api_key,
+                "Content-Type": "application/json",
+                "Accept": "audio/mpeg"
+            }
             
+            data = {
+                "text": text,
+                "model_id": "eleven_monolingual_v1",
+                "voice_settings": {
+                    "stability": stability,
+                    "similarity_boost": clarity
+                }
+            }
+            
+            # Make the API request
+            url = f"{self.base_url}/text-to-speech/{voice_id}"
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            
+            # Save the audio file
+            with open(output_path, "wb") as f:
+                f.write(response.content)
+            
+            # Create metadata
+            metadata = {
+                "success": True,
+                "text_length": len(text),
+                "voice_id": voice_id,
+                "stability": stability,
+                "clarity": clarity,
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "output_path": output_path
+            }
+            
+            # Save metadata
+            metadata_path = output_path.replace(".mp3", "_metadata.json")
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+            
+            return json.dumps({
+                "success": True,
+                "message": f"Audio generated and saved to {output_path}",
+                "metadata_path": metadata_path
+            })
+            
+        except Exception as e:
+            # Log the error and fall back to simulated results
+            print(f"ElevenLabs API error: {str(e)}")
+            return self._simulate_tts(text, voice_id, stability, clarity, output_path)
+    
+    def _simulate_tts(self, text: str, voice_id: str, stability: float, clarity: float, output_path: str) -> str:
+        """Simulate text-to-speech conversion when API key is not available or API fails."""
         # Simulate processing time based on text length
         process_time = 0.5 + (len(text) / 100) * random.uniform(0.5, 1.5)
         time.sleep(process_time)
         
-        # In a real implementation, this would call the ElevenLabs API
-        # Here, we'll just create a JSON file with metadata
+        # Create metadata
         result = {
             "success": True,
             "text_length": len(text),
@@ -70,7 +138,7 @@ class ElevenLabsTool(BaseTool):
             "note": "This is a simulated result. In production, this would generate a real audio file."
         }
         
-        # For demo purposes, create a metadata file
+        # Create a metadata file
         metadata_path = output_path.replace(".mp3", "_metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(result, f, indent=2)
@@ -82,7 +150,7 @@ class ElevenLabsTool(BaseTool):
         
         return json.dumps({
             "success": True,
-            "message": f"Audio generated and saved to {output_path}",
+            "message": f"Simulated audio generated and saved to {output_path}",
             "metadata_path": metadata_path
         })
         

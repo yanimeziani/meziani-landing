@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 import json
 import random
 import time
+import os
+import requests
 from datetime import datetime, timedelta
 
 class WebSearchInput(BaseModel):
@@ -12,23 +14,73 @@ class WebSearchInput(BaseModel):
     num_results: int = Field(default=5, description="Number of results to return")
 
 class WebSearchTool(BaseTool):
-    """Tool for performing web searches to find current information."""
+    """Tool for performing web searches using Serper.dev API."""
     
     name: str = "Web Search"
-    description: str = "Search the web for current information on a topic"
+    description: str = "Search the web for current information on a topic using Serper API"
     args_schema: Type[BaseModel] = WebSearchInput
+    
+    def __init__(self, api_key=None):
+        """Initialize with optional API key."""
+        super().__init__()
+        self.api_key = api_key or os.environ.get("SERPER_API_KEY")
+        self.base_url = "https://google.serper.dev/search"
     
     def _run(self, query: str, num_results: int = 5) -> str:
         """
-        Simulates a web search for current information.
+        Search the web using Serper.dev API.
         
-        In a production environment, this would use an actual search API like 
-        Google Search, Bing, or a news API. For this demo, we'll simulate results.
+        Args:
+            query: The search query
+            num_results: Maximum number of results to return
+            
+        Returns:
+            JSON string with search results
         """
-        # Simulate search delay
-        time.sleep(random.uniform(1.0, 2.5))
+        # Check if API key is available
+        if not self.api_key:
+            # Fall back to simulated results if no API key
+            return self._simulate_results(query, num_results)
         
-        # Generate current date for making results seem current
+        try:
+            # Prepare request headers and data
+            headers = {
+                "X-API-KEY": self.api_key,
+                "Content-Type": "application/json"
+            }
+            data = {
+                "q": query,
+                "num": num_results
+            }
+            
+            # Make the API request
+            response = requests.post(self.base_url, headers=headers, json=data)
+            response.raise_for_status()
+            
+            # Process and return the results
+            results = []
+            raw_results = response.json()
+            
+            # Extract organic search results
+            if "organic" in raw_results:
+                for item in raw_results["organic"][:num_results]:
+                    results.append({
+                        "title": item.get("title", ""),
+                        "url": item.get("link", ""),
+                        "snippet": item.get("snippet", ""),
+                        "date": datetime.now().strftime("%Y-%m-%d")  # Serper doesn't always provide dates
+                    })
+            
+            return json.dumps({"results": results}, indent=2)
+            
+        except Exception as e:
+            # Log the error and fall back to simulated results
+            print(f"Serper API error: {str(e)}")
+            return self._simulate_results(query, num_results)
+    
+    def _simulate_results(self, query: str, num_results: int = 5) -> str:
+        """Simulate search results when API key is not available or API fails."""
+        # Generate current date for results
         current_date = datetime.now()
         yesterday = current_date - timedelta(days=1)
         

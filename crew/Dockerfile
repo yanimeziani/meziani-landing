@@ -10,7 +10,6 @@ RUN pip install flask  # Add Flask for the dashboard
 
 # Set environment variables
 ENV PYTHONPATH=/app/src
-ENV OPENAI_API_KEY=""
 
 # Copy the application code
 COPY . .

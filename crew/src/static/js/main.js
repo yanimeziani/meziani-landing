@@ -94,10 +94,10 @@ function updatePodcastsList(podcasts) {
     }
     
     // Add all podcasts
-    podcasts.forEach(podcast => {
+    for (const podcast of podcasts) {
         // Skip the current job, as it's displayed separately
         if (podcast.status === 'running' && currentJobContainer.dataset.jobId === podcast.id) {
-            return;
+            continue;
         }
         
         const card = document.importNode(podcastCardTemplate, true);
@@ -113,7 +113,7 @@ function updatePodcastsList(podcasts) {
         
         // Add card to list (at the beginning)
         podcastsList.insertBefore(card, podcastsList.firstChild);
-    });
+    }
 }
 
 // Update the current job display
@@ -155,7 +155,7 @@ function updateCurrentJob(podcasts, currentJobId) {
         // Get the 5 most recent updates
         const recentUpdates = currentJob.updates.slice(-5).reverse();
         
-        recentUpdates.forEach(update => {
+        for (const update of recentUpdates) {
             const updateEl = document.createElement('div');
             updateEl.className = 'text-sm';
             
@@ -169,7 +169,7 @@ function updateCurrentJob(podcasts, currentJobId) {
             `;
             
             updatesContainer.appendChild(updateEl);
-        });
+        }
     } else {
         updatesContainer.innerHTML = '<div class="text-sm text-gray-500">No updates yet</div>';
     }
