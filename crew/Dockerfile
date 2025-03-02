@@ -13,8 +13,18 @@ ENV PYTHONPATH=/app/src
 # Copy the application code
 COPY . .
 
+# Create data directory for memory DB storage
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 # Expose the app port
 EXPOSE 5000
 
-# Use environment variables passed from docker-compose
-CMD ["crewai", "run"]
+# Check if the crewai command is available
+RUN pip show crewai || echo "Warning: crewai package not found!"
+
+# Run the crewai command if available, otherwise fall back to a Python script
+CMD if command -v crewai > /dev/null; then \
+      crewai run; \
+    else \
+      python src/app.py; \
+    fi

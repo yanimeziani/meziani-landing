@@ -31,6 +31,10 @@ jobs:
           echo "SSL_EMAIL=${{ secrets.SSL_EMAIL }}" >> .env
           echo "GENERIC_TIMEZONE=${{ secrets.GENERIC_TIMEZONE }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+          echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+          echo "CREWAI_CALLBACKS_ENABLED=${{ secrets.CREWAI_CALLBACKS_ENABLED }}" >> .env
+          echo "CREWAI_USER_ID=${{ secrets.CREWAI_USER_ID }}" >> .env
+          echo "CREWAI_MEMORY_DB_PATH=${{ secrets.CREWAI_MEMORY_DB_PATH }}" >> .env
           
           # Copy .env file to server
           scp .env ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/.env
@@ -41,11 +45,15 @@ jobs:
           scp docker-compose.yaml ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/
           
           # Create directories if they don't exist
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "mkdir -p ~/app/landing ~/app/crew/media_org"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "mkdir -p ~/app/landing ~/app/crew"
           
           # Copy Dockerfiles
           scp landing/Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/landing/
-          scp crew/media_org/Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/crew/media_org/
+          scp crew/Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/crew/
+
+      - name: Create required Docker volumes
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "docker volume create traefik_data || true"
 
       - name: Copy landing page files
         run: |
