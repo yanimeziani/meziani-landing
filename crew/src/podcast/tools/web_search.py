@@ -38,9 +38,12 @@ class WebSearchTool(BaseTool):
         Returns:
             JSON string with search results
         """
+        # Log the search query
+        print(f"Searching for: '{query}'")
+        
         # Check if API key is available
         if not self.api_key:
-            # Fall back to simulated results if no API key
+            print("No SERPER_API_KEY found. Using simulated search results.")
             return self._simulate_results(query, num_results)
         
         try:
@@ -69,10 +72,11 @@ class WebSearchTool(BaseTool):
                         "title": item.get("title", ""),
                         "url": item.get("link", ""),
                         "snippet": item.get("snippet", ""),
-                        "date": datetime.now().strftime("%Y-%m-%d")  # Serper doesn't always provide dates
+                        "date": item.get("date", datetime.now().strftime("%Y-%m-%d"))
                     })
             
-            return json.dumps({"results": results}, indent=2)
+            print(f"Found {len(results)} results for query: '{query}'")
+            return json.dumps({"results": results, "query": query}, indent=2)
             
         except Exception as e:
             # Log the error and fall back to simulated results

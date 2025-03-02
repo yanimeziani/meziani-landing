@@ -215,8 +215,9 @@ class PodcastCrew():
                     self.callback(f"Task completed: {task_name}", 
                                  task_name.split('_')[0] if '_' in task_name else task_name)
                 elif isinstance(task_output, str):
-                    # Handle string task outputs
-                    self.callback(f"Task completed with string output: {task_output[:50]}...", "processing")
+                    # Handle string task outputs safely
+                    preview = task_output[:50] + "..." if len(task_output) > 50 else task_output
+                    self.callback(f"Task produced string output: {preview}", "processing")
                 else:
                     # Handle other types
                     self.callback(f"Task completed with output type: {type(task_output).__name__}", "processing")

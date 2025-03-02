@@ -184,3 +184,154 @@ fetchPodcasts();
 
 // Set up polling
 setInterval(fetchPodcasts, 3000);
+
+// Voice selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const voiceSelectionDiv = document.getElementById('voice-selection');
+  const advancedOptionsToggle = document.getElementById('advanced-options-toggle');
+  
+  // Only run if these elements exist
+  if (voiceSelectionDiv && advancedOptionsToggle) {
+    // Toggle advanced options
+    advancedOptionsToggle.addEventListener('click', function() {
+      voiceSelectionDiv.classList.toggle('hidden');
+      
+      // Load voices if showing the section
+      if (!voiceSelectionDiv.classList.contains('hidden')) {
+        loadVoices();
+      }
+    });
+    
+    // Load available voices from API
+    function loadVoices() {
+      fetch('/api/voices')
+        .then(response => response.json())
+        .then(data => {
+          const host1Select = document.getElementById('host1-voice');
+          const host2Select = document.getElementById('host2-voice');
+          
+          if (host1Select && host2Select && data.voices) {
+            // Clear existing options
+            host1Select.innerHTML = '';
+            host2Select.innerHTML = '';
+            
+            // Add auto option
+            const autoOption = document.createElement('option');
+            autoOption.value = 'auto';
+            autoOption.textContent = 'Auto-select appropriate voice';
+            host1Select.appendChild(autoOption.cloneNode(true));
+            host2Select.appendChild(autoOption);
+            
+            // Group voices by gender
+            const maleVoices = data.voices.filter(v => v.gender === 'male');
+            const femaleVoices = data.voices.filter(v => v.gender === 'female');
+            const otherVoices = data.voices.filter(v => v.gender !== 'male' && v.gender !== 'female');
+            
+            // Add male voices group
+            if (maleVoices.length > 0) {
+              const maleGroup = document.createElement('optgroup');
+              maleGroup.label = 'Male Voices';
+              maleVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name.toLowerCase();
+                option.textContent = voice.name;
+                maleGroup.appendChild(option);
+              });
+              host1Select.appendChild(maleGroup.cloneNode(true));
+              host2Select.appendChild(maleGroup);
+            }
+            
+            // Add female voices group
+            if (femaleVoices.length > 0) {
+              const femaleGroup = document.createElement('optgroup');
+              femaleGroup.label = 'Female Voices';
+              femaleVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name.toLowerCase();
+                option.textContent = voice.name;
+                femaleGroup.appendChild(option);
+              });
+              host1Select.appendChild(femaleGroup.cloneNode(true));
+              host2Select.appendChild(femaleGroup);
+            }
+            
+            // Add other voices if any
+            if (otherVoices.length > 0) {
+              const otherGroup = document.createElement('optgroup');
+              otherGroup.label = 'Other Voices';
+              otherVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name.toLowerCase();
+                option.textContent = voice.name;
+                otherGroup.appendChild(option);
+              });
+              host1Select.appendChild(otherGroup.cloneNode(true));
+              host2Select.appendChild(otherGroup);
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error loading voices:', error);
+        });
+    }
+    
+    // Preview voice buttons
+    document.getElementById('preview-host1')?.addEventListener('click', function() {
+      previewVoice('host1');
+    });
+    
+    document.getElementById('preview-host2')?.addEventListener('click', function() {
+      previewVoice('host2');
+    });
+    
+    // Update host name displays when host input fields change
+    document.getElementById('host1')?.addEventListener('input', function() {
+      document.querySelectorAll('.host1-name').forEach(el => {
+        el.textContent = this.value || 'Host 1';
+      });
+    });
+    
+    document.getElementById('host2')?.addEventListener('input', function() {
+      document.querySelectorAll('.host2-name').forEach(el => {
+        el.textContent = this.value || 'Host 2';
+      });
+    });
+    
+    // Function to preview a voice
+    function previewVoice(hostId) {
+      const voiceSelect = document.getElementById(`${hostId}-voice`);
+      const audioElement = document.getElementById(`preview-${hostId}-audio`);
+      const previewBtn = document.getElementById(`preview-${hostId}`);
+      
+      if (voiceSelect && audioElement && previewBtn) {
+        const selectedVoice = voiceSelect.value;
+        if (selectedVoice && selectedVoice !== 'auto') {
+          previewBtn.textContent = 'Loading...';
+          previewBtn.disabled = true;
+          
+          fetch(`/api/voice-preview/${selectedVoice}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success && data.metadata_path) {
+                // Extract base filename and use it for audio path
+                const audioPath = data.metadata_path.replace('_metadata.json', '.mp3');
+                audioElement.src = `/audio/${audioPath.split('/').pop()}`;
+                audioElement.classList.remove('hidden');
+                audioElement.load();
+                audioElement.play();
+              } else {
+                console.error('Failed to generate voice preview');
+              }
+            })
+            .catch(error => {
+              console.error('Error previewing voice:', error);
+            })
+            .finally(() => {
+              previewBtn.textContent = 'Preview Voice';
+              previewBtn.disabled = false;
+            });
+        }
+      }
+    }
+  }
+});

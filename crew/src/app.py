@@ -314,6 +314,52 @@ def health_check():
     
     return jsonify(status)
 
+@app.route('/api/voices')
+def list_voices():
+    """List available text-to-speech voices"""
+    from podcast.tools.elevenlabs import ElevenLabsTool
+    
+    try:
+        tool = ElevenLabsTool()
+        voices = tool.get_available_voices()
+        return jsonify({"voices": voices})
+    except Exception as e:
+        logger.error(f"Error fetching voices: {str(e)}")
+        return jsonify({"error": "Failed to fetch voices", "details": str(e)}), 500
+
+@app.route('/api/voice-preview/<voice_name>')
+def voice_preview(voice_name):
+    """Generate a preview of a specific voice"""
+    from podcast.tools.elevenlabs import ElevenLabsTool
+    
+    try:
+        tool = ElevenLabsTool()
+        result = tool.create_voice_preview(voice_name)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error creating voice preview: {str(e)}")
+        return jsonify({"error": "Failed to create preview", "details": str(e)}), 500
+
+@app.route('/debug')
+def debug_panel():
+    """Debug panel for developers"""
+    if not os.environ.get('DEBUG', 'false').lower() == 'true':
+        return "Debug mode not enabled", 403
+    
+    status = {
+        "env_vars": {k: "***" if "key" in k.lower() else v for k, v in os.environ.items()},
+        "podcasts": len(podcasts),
+        "queue": len(job_queue),
+        "current_job": current_job.id if current_job else None,
+        "directories": {
+            "data_podcasts": os.path.exists("data/podcasts"),
+            "data_research": os.path.exists("data/research"),
+            "memory_db": os.path.exists(os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db'))
+        }
+    }
+    
+    return render_template('debug.html', status=status)
+
 if __name__ == "__main__":
     # Create necessary directories
     os.makedirs('data/podcasts', exist_ok=True)
