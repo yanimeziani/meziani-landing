@@ -21,12 +21,11 @@ def run():
         'topic': 'AI LLMs',
         'current_year': str(datetime.now().year)
     }
-    
     try:
-        Media().crew().kickoff(inputs=inputs)
+        result = Media().crew().kickoff(inputs=inputs)
+        return result  # Return the result
     except Exception as e:
         raise Exception(f"An error occurred while running the crew: {e}")
-
 
 def train():
     """
