@@ -1,7 +1,6 @@
 crewai
 crewai-tools
 flask
-langchain-anthropic
 requests
 python-dotenv
 pydub

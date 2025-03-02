@@ -73,7 +73,6 @@ services:
       - traefik.http.services.crewai.loadbalancer.healthcheck.timeout=5s
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - CREWAI_CALLBACKS_ENABLED=${CREWAI_CALLBACKS_ENABLED:-true}
       - CREWAI_USER_ID=${CREWAI_USER_ID:-default-user}
       - CREWAI_MEMORY_DB_PATH=${CREWAI_MEMORY_DB_PATH:-/app/data/memory.db}

@@ -31,7 +31,6 @@ jobs:
           echo "SSL_EMAIL=${{ secrets.SSL_EMAIL }}" >> .env
           echo "GENERIC_TIMEZONE=${{ secrets.GENERIC_TIMEZONE }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-          echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
           echo "CREWAI_CALLBACKS_ENABLED=${{ secrets.CREWAI_CALLBACKS_ENABLED }}" >> .env
           echo "CREWAI_USER_ID=${{ secrets.CREWAI_USER_ID }}" >> .env
           echo "CREWAI_MEMORY_DB_PATH=${{ secrets.CREWAI_MEMORY_DB_PATH }}" >> .env

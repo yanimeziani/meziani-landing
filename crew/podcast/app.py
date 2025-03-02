@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Validate required environment variables
 required_env_vars = {
-    'ANTHROPIC_API_KEY': 'Claude API key for CrewAI agents',
-    'MODEL': 'Model name to use for agents',
+    'OLLAMA_BASE_URL': 'Ollama API URL for CrewAI agents',
+    'MODEL': 'Model name to use for agents (e.g., deepseek-coder:7b-instruct)',
     'SERPER_API_KEY': 'API key for web search functionality',
     'ELEVENLABS_API_KEY': 'API key for text-to-speech conversion',
     'CREWAI_MEMORY_DB_PATH': 'Path for CrewAI memory storage'
@@ -23,15 +23,19 @@ required_env_vars = {
 
 missing_vars = []
 for var, description in required_env_vars.items():
-    if not os.environ.get(var):
+    if not os.environ.get(var) and var != 'OLLAMA_BASE_URL':  # OLLAMA_BASE_URL has a default value
         missing_vars.append(f"{var} ({description})")
         logger.warning(f"Missing environment variable: {var} - {description}")
 
 if missing_vars:
-    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-    if os.environ.get('ANTHROPIC_API_KEY') is None:  # Only exit if the critical API key is missing
-        logger.critical("ANTHROPIC_API_KEY is required but not set. Exiting.")
-        sys.exit(1)
+    logger.warning(f"Missing recommended environment variables: {', '.join(missing_vars)}")
+    # No need to exit for missing variables when using Ollama (we'll use defaults)
+
+# Set default Ollama URL if not provided
+if not os.environ.get('OLLAMA_BASE_URL'):
+    default_ollama_url = 'http://localhost:11434'
+    os.environ['OLLAMA_BASE_URL'] = default_ollama_url
+    logger.info(f"OLLAMA_BASE_URL not set, using default: {default_ollama_url}")
 
 # Configure memory DB path
 memory_db_path = os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')
@@ -51,7 +55,7 @@ class PodcastJob:
     def __init__(self, topic=None, hosts=None):
         self.id = str(uuid.uuid4())
         self.topic = topic or "Current Events"
-        self.hosts = hosts or ["Alex", "Jamie"]
+        self.hosts = hosts or ["Alex", "Simon"]
         self.status = "queued"
         self.progress = 0
         self.stages = ["research", "summarize", "script", "voice", "complete"]
@@ -298,8 +302,8 @@ def health_check():
     status = {
         "status": "healthy",
         "time": datetime.now().isoformat(),
-        "api_keys": {
-            "anthropic": bool(os.environ.get('ANTHROPIC_API_KEY')),
+        "configuration": {
+            "ollama_url": os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434'),
             "serper": bool(os.environ.get('SERPER_API_KEY')),
             "elevenlabs": bool(os.environ.get('ELEVENLABS_API_KEY'))
         },
@@ -307,10 +311,32 @@ def health_check():
         "version": "1.0.0"
     }
     
-    # Set overall status
-    if not status['api_keys']['anthropic']:
-        status['status'] = "degraded"
-        status['message'] = "Missing critical API key: ANTHROPIC_API_KEY"
+    # Check if we can connect to Ollama
+    import requests
+    try:
+        response = requests.get(f"{os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/tags")
+        if response.status_code == 200:
+            status["ollama_connection"] = "ok"
+            models = response.json().get("models", [])
+            status["available_models"] = [model["name"] for model in models]
+            
+            # Check if our configured model is available
+            configured_model = os.environ.get('MODEL', 'deepseek-coder:7b-instruct')
+            model_base = configured_model.split(':')[0] if ':' in configured_model else configured_model
+            available_models = [m.split(':')[0] for m in status["available_models"]]
+            
+            if model_base not in available_models:
+                status["status"] = "degraded"
+                status["message"] = f"Configured model '{configured_model}' not found in available Ollama models"
+        else:
+            status["ollama_connection"] = "failed"
+            status["status"] = "degraded"
+            status["message"] = "Could not retrieve model list from Ollama API"
+    except requests.RequestException as e:
+        status["ollama_connection"] = "error"
+        status["ollama_error"] = str(e)
+        status["status"] = "degraded"
+        status["message"] = f"Failed to connect to Ollama at {os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')}"
     
     return jsonify(status)
 
@@ -340,6 +366,24 @@ def voice_preview(voice_name):
         logger.error(f"Error creating voice preview: {str(e)}")
         return jsonify({"error": "Failed to create preview", "details": str(e)}), 500
 
+@app.route('/api/models')
+def list_models():
+    """List available Ollama models"""
+    import requests
+    
+    try:
+        response = requests.get(f"{os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/tags")
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            return jsonify({
+                "models": models,
+                "current_model": os.environ.get('MODEL', 'deepseek-coder:7b-instruct')
+            })
+        else:
+            return jsonify({"error": "Failed to retrieve models from Ollama"}), 500
+    except requests.RequestException as e:
+        return jsonify({"error": "Failed to connect to Ollama", "details": str(e)}), 500
+
 @app.route('/debug')
 def debug_panel():
     """Debug panel for developers"""
@@ -358,6 +402,17 @@ def debug_panel():
         }
     }
     
+    # Add Ollama connection status
+    import requests
+    try:
+        response = requests.get(f"{os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/tags")
+        status["ollama_connection"] = "OK" if response.status_code == 200 else f"Error: {response.status_code}"
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            status["ollama_models"] = [model["name"] for model in models]
+    except requests.RequestException as e:
+        status["ollama_connection"] = f"Connection Error: {str(e)}"
+    
     return render_template('debug.html', status=status)
 
 if __name__ == "__main__":
@@ -367,10 +422,10 @@ if __name__ == "__main__":
     
     # Log startup information
     logger.info("=== CrewAI Podcast Generator Starting ===")
-    logger.info(f"API Keys configured: Anthropic: {'Yes' if os.environ.get('ANTHROPIC_API_KEY') else 'No'}, " 
-                f"Serper: {'Yes' if os.environ.get('SERPER_API_KEY') else 'No'}, "
+    logger.info(f"Ollama URL: {os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')}")
+    logger.info(f"API Keys configured: Serper: {'Yes' if os.environ.get('SERPER_API_KEY') else 'No'}, "
                 f"ElevenLabs: {'Yes' if os.environ.get('ELEVENLABS_API_KEY') else 'No'}")
-    logger.info(f"Using model: {os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')}")
+    logger.info(f"Using model: {os.environ.get('MODEL', 'deepseek-coder:7b-instruct')}")
     logger.info(f"Memory DB path: {os.environ.get('CREWAI_MEMORY_DB_PATH', '/app/data/memory.db')}")
     logger.info(f"Server starting on http://0.0.0.0:5000")
     

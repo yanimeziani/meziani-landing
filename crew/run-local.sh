@@ -15,10 +15,8 @@ if [ ! -f .env ]; then
   echo -e "${YELLOW}⚠️  .env file not found, creating a template. Please edit it with your API keys.${NC}"
   cp .env.example .env 2>/dev/null || touch .env
   echo "# Add your API keys below (required)" >> .env
-  echo "ANTHROPIC_API_KEY=your_anthropic_key_here" >> .env
   echo "SERPER_API_KEY=your_serper_key_here" >> .env
   echo "ELEVENLABS_API_KEY=your_elevenlabs_key_here" >> .env
-  echo "MODEL=claude-3-5-sonnet-20240620" >> .env
   echo "CURRENT_YEAR=2025" >> .env
   echo "" >> .env
   echo -e "${YELLOW}Created .env file. Please edit it and run this script again.${NC}"

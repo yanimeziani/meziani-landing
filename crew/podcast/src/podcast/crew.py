@@ -1,53 +1,24 @@
+"""
+Podcast creation crew module for generating podcast content using CrewAI.
+"""
+import os
+import traceback
+from datetime import datetime
+
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai.tools import BaseTool
-import json
-import yaml
-from datetime import datetime
-import os
 import dotenv
-import logging
 
 # Load environment variables from .env file if it exists
 dotenv.load_dotenv()
 
 @CrewBase
-class PodcastCrew():
+class PodcastCrew:
     """Podcast creation crew"""
 
-    # Define as property to load dynamically
-    @property
-    def agents_config(self):
-        """Load agents_config from YAML file"""
-        try:
-            config_path = os.path.join(os.path.dirname(__file__), 'config', 'agents.yaml')
-            with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            if self.callback:
-                self.callback(f"Failed to load agents config: {str(e)}", "error")
-            return {}
-
-    @property
-    def tasks_config(self):
-        """Load tasks_config from YAML file"""
-        try:
-            config_path = os.path.join(os.path.dirname(__file__), 'config', 'tasks.yaml')
-            with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            if self.callback:
-                self.callback(f"Failed to load tasks config: {str(e)}", "error")
-            return {}
-    
-    # Add a method to ensure config is properly loaded as dict
-    def _ensure_config_dict(self, config):
-        """Ensure that config is a dictionary"""
-        if isinstance(config, str):
-            return {"description": config}
-        elif not isinstance(config, dict):
-            return {"description": str(config)}
-        return config
+    # Keep these as string attributes for compatibility with CrewBase
+    agents_config = 'config/agents.yaml'
+    tasks_config = 'config/tasks.yaml'
 
     def __init__(self, topic, hosts=None, job_id=None, callback=None):
         """
@@ -66,212 +37,171 @@ class PodcastCrew():
 
     @agent
     def researcher(self) -> Agent:
-        # Get researcher config safely
-        agent_config = self.agents_config.get('researcher', {})
-        name = role = goal = backstory = ""
-        
-        # Extract agent properties directly
-        if isinstance(agent_config, dict):
-            role = agent_config.get('role', f"Spécialiste de recherche sur {self.topic}")
-            goal = agent_config.get('goal', "Effectuer des recherches complètes sur le sujet du podcast")
-            backstory = agent_config.get('backstory', "Vous êtes un chercheur québécois spécialisé en recherche d'information")
-        elif isinstance(agent_config, str):
-            role = agent_config
-            
-        # Create agent with direct properties instead of config
+        """Creates the researcher agent."""
         return Agent(
-            role=role,
-            goal=goal,
-            backstory=backstory,
+            role=f"Spécialiste de recherche sur {self.topic}",
+            goal="Effectuer des recherches complètes sur le sujet du podcast",
+            backstory="Vous êtes un chercheur québécois spécialisé en recherche d'information",
             verbose=True,
             llm_config={
-                "provider": "anthropic",
+                "provider": "ollama",
                 "config": {
-                    "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
+                    "model": os.environ.get('MODEL', 'deepseek-coder:7b'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
+                    "base_url": os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434'),
                 }
             }
         )
 
     @agent
     def topic_curator(self) -> Agent:
-        # Get topic_curator config safely
-        agent_config = self.agents_config.get('topic_curator', {})
-        name = role = goal = backstory = ""
-        
-        # Extract agent properties directly
-        if isinstance(agent_config, dict):
-            role = agent_config.get('role', "Curateur de sujets de podcast")
-            goal = agent_config.get('goal', "Sélectionner et affiner les sujets les plus captivants")
-            backstory = agent_config.get('backstory', "Vous avez un sens aigu pour identifier les sujets tendance québécois")
-        elif isinstance(agent_config, str):
-            role = agent_config
-            
-        # Create agent with direct properties instead of config
+        """Creates the topic curator agent."""
         return Agent(
-            role=role,
-            goal=goal,
-            backstory=backstory,
+            role="Curateur de sujets de podcast",
+            goal="Sélectionner et affiner les sujets les plus captivants",
+            backstory="Vous avez un sens aigu pour identifier les sujets tendance québécois",
             verbose=True,
             llm_config={
-                "provider": "anthropic",
+                "provider": "ollama",
                 "config": {
-                    "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
+                    "model": os.environ.get('MODEL', 'deepseek-coder:7b'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
+                    "base_url": os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434'),
                 }
             }
         )
 
     @agent
     def script_writer(self) -> Agent:
-        # Get script_writer config safely
-        agent_config = self.agents_config.get('script_writer', {})
-        name = role = goal = backstory = ""
-        
-        # Extract agent properties directly
-        if isinstance(agent_config, dict):
-            role = agent_config.get('role', "Rédacteur de scripts de podcast")
-            goal = agent_config.get('goal', "Transformer les résultats de recherche en un script conversationnel")
-            backstory = agent_config.get('backstory', "Vous maîtrisez le français québécois et ses expressions colorées")
-        elif isinstance(agent_config, str):
-            role = agent_config
-            
-        # Create agent with direct properties instead of config
+        """Creates the script writer agent."""
         return Agent(
-            role=role,
-            goal=goal,
-            backstory=backstory,
+            role="Rédacteur de scripts de podcast",
+            goal="Transformer les résultats de recherche en un script conversationnel",
+            backstory="Vous maîtrisez le français québécois et ses expressions colorées",
             verbose=True,
             llm_config={
-                "provider": "anthropic",
+                "provider": "ollama",
                 "config": {
-                    "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
+                    "model": os.environ.get('MODEL', 'deepseek-coder:7b'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
+                    "base_url": os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434'),
                 }
             }
         )
 
     @agent
     def audio_director(self) -> Agent:
-        # Get audio_director config safely
-        agent_config = self.agents_config.get('audio_director', {})
-        name = role = goal = backstory = ""
-        
-        # Extract agent properties directly
-        if isinstance(agent_config, dict):
-            role = agent_config.get('role', "Spécialiste de production audio de podcast")
-            goal = agent_config.get('goal', "Fournir des conseils pour la production audio du podcast")
-            backstory = agent_config.get('backstory', "Vous connaissez les nuances de l'accent québécois")
-        elif isinstance(agent_config, str):
-            role = agent_config
-            
-        # Create agent with direct properties instead of config
+        """Creates the audio director agent."""
         return Agent(
-            role=role,
-            goal=goal,
-            backstory=backstory,
+            role="Spécialiste de production audio de podcast",
+            goal="Fournir des conseils pour la production audio du podcast",
+            backstory="Vous connaissez les nuances de l'accent québécois",
             verbose=True,
             llm_config={
-                "provider": "anthropic",
+                "provider": "ollama",
                 "config": {
-                    "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
+                    "model": os.environ.get('MODEL', 'deepseek-coder:7b'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
+                    "base_url": os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434'),
                 }
             }
         )
 
     @task
     def research_task(self) -> Task:
-        from podcast.src.podcast.tools.web_search import WebSearchTool
-        
-        # Add debug logging for task config
-        if self.callback:
-            self.callback(f"Tasks config type: {type(self.tasks_config).__name__}", "debug")
+        """Creates the research task."""
+        try:
+            from podcast.tools.web_search import WebSearchTool
             
-        # Bypass the config argument completely and use description directly
-        task_config = self.tasks_config.get('research_task', {})
-        description = ""
-        if isinstance(task_config, dict) and 'description' in task_config:
-            description = task_config['description']
-        elif isinstance(task_config, str):
-            description = task_config
-        else:
-            description = f"Research on {self.topic}"
-                
-        return Task(
-            # Change this line to pass a dictionary for config instead of direct description
-            config={"description": description},  # Pass as a dict with description key
-            context=[self.topic, str(self.hosts)],
-            human_input_callback=self.callback,
-            tools=[WebSearchTool()]
-        )
+            task_instance = Task(
+                description=f"Research on {self.topic} for a French Quebec podcast",
+                expected_output=f"Comprehensive research information about {self.topic} including key facts, trends, and expert opinions",
+                agent=self.researcher()
+            )
+            
+            # Add tools separately
+            task_instance.tools = [WebSearchTool()]
+            
+            # Callback is handled at the Crew level, not task level in newer CrewAI versions
+            
+            return task_instance
+        except ImportError:
+            # Fallback to local import if package import fails
+            from podcast.src.podcast.tools.web_search import WebSearchTool
+            
+            task_instance = Task(
+                description=f"Research on {self.topic} for a French Quebec podcast",
+                expected_output=f"Comprehensive research information about {self.topic} including key facts, trends, and expert opinions",
+                agent=self.researcher()
+            )
+            
+            # Add tools separately
+            task_instance.tools = [WebSearchTool()]
+            
+            # Callback is handled at the Crew level, not task level in newer CrewAI versions
+            
+            return task_instance
 
     @task
     def topic_curation_task(self) -> Task:
-        # Bypass the config argument completely and use description directly
-        task_config = self.tasks_config.get('topic_curation_task', {})
-        description = ""
-        if isinstance(task_config, dict) and 'description' in task_config:
-            description = task_config['description']
-        elif isinstance(task_config, str):
-            description = task_config
-        else:
-            description = f"Curate topics about {self.topic}"
-                
-        return Task(
-            # Use config dictionary here too
-            config={"description": description},
-            context=[self.topic, str(self.hosts)],
-            human_input_callback=self.callback,
-            expected_output=dict
+        """Creates the topic curation task."""
+        task_instance = Task(
+            description=f"Curate topics about {self.topic} for a French Quebec podcast",
+            expected_output=f"A curated list of engaging subtopics and angles for a podcast about {self.topic}, tailored for a Quebec audience",
+            agent=self.topic_curator()
         )
+        
+        # Callback is handled at the Crew level, not task level in newer CrewAI versions
+        
+        return task_instance
 
     @task
     def script_writing_task(self) -> Task:
-        # Bypass the config argument completely and use description directly
-        task_config = self.tasks_config.get('script_writing_task', {})
-        description = ""
-        if isinstance(task_config, dict) and 'description' in task_config:
-            description = task_config['description']
-        elif isinstance(task_config, str):
-            description = task_config
-        else:
-            description = f"Write a podcast script in French Quebec style about {self.topic} for hosts {self.hosts[0]} and {self.hosts[1]}"
-                
-        return Task(
-            # Use config dictionary here too
-            config={"description": description},
-            context=[self.topic, str(self.hosts)],
-            human_input_callback=self.callback,
-            expected_output=str
+        """Creates the script writing task."""
+        task_instance = Task(
+            description=f"Write a podcast script in French Quebec style about {self.topic} for hosts {self.hosts[0]} and {self.hosts[1]}",
+            expected_output="A complete podcast script with dialogue for both hosts, formatted with clear sections and including Quebec French expressions",
+            agent=self.script_writer()
         )
+        
+        # Callback is handled at the Crew level, not task level in newer CrewAI versions
+        
+        return task_instance
 
     @task
     def audio_production_task(self) -> Task:
-        from podcast.src.podcast.tools.elevenlabs import ElevenLabsTool
-        
-        # Bypass the config argument completely and use description directly
-        task_config = self.tasks_config.get('audio_production_task', {})
-        description = ""
-        if isinstance(task_config, dict) and 'description' in task_config:
-            description = task_config['description']
-        elif isinstance(task_config, str):
-            description = task_config
-        else:
-            description = f"Create audio production guidelines for a French Quebec podcast about {self.topic} using ElevenLabs voices Alex and Simon"
-                
-        return Task(
-            # Use config dictionary here too
-            config={"description": description},
-            context=[self.topic, str(self.hosts)],
-            human_input_callback=self.callback,
-            tools=[ElevenLabsTool()],
-            expected_output=dict
-        )
+        """Creates the audio production task."""
+        try:
+            from podcast.tools.elevenlabs import ElevenLabsTool
+            
+            task_instance = Task(
+                description=f"Create audio production guidelines for a French Quebec podcast about {self.topic} using ElevenLabs voices Alex and Simon",
+                expected_output="Detailed audio production guidelines including voice profiles, tone instructions, and technical specifications for a Quebec-accent podcast",
+                agent=self.audio_director()
+            )
+            
+            # Add tools separately
+            task_instance.tools = [ElevenLabsTool()]
+            
+            # Callback is handled at the Crew level, not task level in newer CrewAI versions
+            
+            return task_instance
+        except ImportError:
+            # Fallback to local import if package import fails
+            from podcast.src.podcast.tools.elevenlabs import ElevenLabsTool
+            
+            task_instance = Task(
+                description=f"Create audio production guidelines for a French Quebec podcast about {self.topic} using ElevenLabs voices Alex and Simon",
+                expected_output="Detailed audio production guidelines including voice profiles, tone instructions, and technical specifications for a Quebec-accent podcast",
+                agent=self.audio_director()
+            )
+            
+            # Add tools separately
+            task_instance.tools = [ElevenLabsTool()]
+            
+            # Callback is handled at the Crew level, not task level in newer CrewAI versions
+            
+            return task_instance
 
     @crew
     def crew(self) -> Crew:
@@ -300,12 +230,12 @@ class PodcastCrew():
         Returns:
             dict: Results of the podcast creation process
         """
-        # Check if API keys are set and validate configuration
-        anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
+        # Check configuration
+        ollama_base_url = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
         serper_key = os.environ.get('SERPER_API_KEY')
         elevenlabs_key = os.environ.get('ELEVENLABS_API_KEY')
         memory_db_path = os.environ.get('CREWAI_MEMORY_DB_PATH')
-        model = os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')
+        model = os.environ.get('MODEL', 'deepseek-coder:7b')
         
         # Validate memory DB path
         if memory_db_path:
@@ -315,29 +245,18 @@ class PodcastCrew():
                     os.makedirs(memory_dir, exist_ok=True)
                     if self.callback:
                         self.callback(f"Created memory directory: {memory_dir}", "debug")
-                except Exception as e:
+                except (OSError, IOError) as e:
                     if self.callback:
                         self.callback(f"Failed to create memory directory: {str(e)}", "error")
         
-        # Log configuration status (without showing the actual keys)
+        # Log configuration status
         if self.callback:
-            self.callback(f"API keys available: Anthropic: {'Yes' if anthropic_key else 'No'}, "
+            self.callback(f"API configuration: Ollama URL: {ollama_base_url}, "
                          f"Serper: {'Yes' if serper_key else 'No'}, "
                          f"ElevenLabs: {'Yes' if elevenlabs_key else 'No'}", "debug")
             self.callback(f"Using model: {model}", "debug")
             self.callback(f"Memory DB path: {memory_db_path}", "debug")
         
-        # Check required API key
-        if not anthropic_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable is required but not set")
-        
-        # Prepare tools for agents
-        from podcast.tools.web_search import WebSearchTool
-        from podcast.tools.elevenlabs import ElevenLabsTool
-        
-        # Create tools
-        web_search_tool = WebSearchTool()
-        elevenlabs_tool = ElevenLabsTool()
         
         # Set up inputs
         inputs = {
@@ -380,7 +299,7 @@ class PodcastCrew():
                 else:
                     self.callback(f"Task produced {task_output_type} output", "processing")
             
-            except Exception as e:
+            except (ValueError, TypeError, KeyError) as e:
                 # Catch any errors in the callback processing itself
                 self.callback(f"Error in task callback: {str(e)}", "error")
                 
@@ -390,9 +309,8 @@ class PodcastCrew():
             # Create the crew with task callbacks
             crew_instance = self.crew()
             
-            # Set task callbacks
-            for task in crew_instance.tasks:
-                task.human_input_callback = task_callback
+            # In newer CrewAI versions, callbacks are handled differently
+            # No need to set task.human_input_callback directly
             
             # Kickoff the crew
             if self.callback:
@@ -401,12 +319,6 @@ class PodcastCrew():
             # Run the crew
             if self.callback:
                 self.callback("Starting CrewAI execution with inputs: " + str(inputs), "debug")
-                
-            # Add extra debugging for task config
-            if self.callback:
-                # Log config type for each task
-                for task_name, task_config in self.tasks_config.items():
-                    self.callback(f"Task config '{task_name}' is type: {type(task_config).__name__}", "debug")
                 
             results = crew_instance.kickoff(inputs=inputs)
             
@@ -481,7 +393,7 @@ class PodcastCrew():
                         output["script"] = fallback_script
                         
                     return output
-                except Exception as e:
+                except (KeyError, AttributeError, TypeError) as e:
                     self.callback(f"Error processing dictionary result: {str(e)}", "error")
                     # Fall through to fallback handling
             
@@ -504,14 +416,13 @@ class PodcastCrew():
                     self.callback(f"Unexpected result type: {type(results).__name__}, using fallback", "warning")
                 return self._process_tasks_manually(inputs)
         
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             # Log the error with more details
             error_msg = f"Error in crew.run(): {str(e)}"
             if self.callback:
                 self.callback(error_msg, "error")
                 
                 # Try to get more error details
-                import traceback
                 tb = traceback.format_exc()
                 self.callback(f"Error details: {tb}", "debug")
             
@@ -519,7 +430,7 @@ class PodcastCrew():
             try:
                 self.callback("Attempting recovery with manual processing", "warning")
                 return self._process_tasks_manually(inputs)
-            except Exception as recovery_error:
+            except (ValueError, KeyError) as recovery_error:
                 # Complete failure - return minimal error result
                 self.callback(f"Recovery failed: {str(recovery_error)}", "error")
                 return {
@@ -598,7 +509,7 @@ class PodcastCrew():
                     }
                 }
             }
-        except Exception as e:
+        except (ValueError, IndexError) as e:
             self.callback(f"Error in string conversion: {str(e)}, using fallback", "error")
             return self._process_tasks_manually({"topic": self.topic, "hosts": self.hosts})
     

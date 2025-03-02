@@ -7,7 +7,6 @@ services:
     ports:
       - "5200:5000"  # Directly expose the port without Traefik
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - CREWAI_CALLBACKS_ENABLED=true
       - CREWAI_USER_ID=local-user
       - CREWAI_MEMORY_DB_PATH=/app/data/memory.db
