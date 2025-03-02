@@ -15,6 +15,8 @@ services:
       - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
       - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
       - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "443:443"
@@ -63,11 +65,12 @@ services:
       - traefik.http.routers.crewai.entrypoints=web,websecure
       - traefik.http.routers.crewai.tls.certresolver=mytlschallenge
       - traefik.http.services.crewai.loadbalancer.server.port=5000
+      - traefik.http.routers.crewai-http.rule=Host(`crew.${DOMAIN_NAME}`)
+      - traefik.http.routers.crewai-http.entrypoints=web
       # Add health check config for Traefik
       - traefik.http.services.crewai.loadbalancer.healthcheck.path=/health
       - traefik.http.services.crewai.loadbalancer.healthcheck.interval=30s
       - traefik.http.services.crewai.loadbalancer.healthcheck.timeout=5s
-      - traefik.http.services.crewai.loadbalancer.healthcheck.retries=3
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
