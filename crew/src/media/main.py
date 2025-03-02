@@ -17,11 +17,7 @@ def run():
     """
     Run the crew.
     """
-    from crewai import Agent, Crew, Process, Task
-    import os
-    
-    # Set the default model to Anthropic
-    os.environ["OPENAI_API_KEY"] = ""  # Clear OpenAI key to prevent fallback
+    from datetime import datetime
     
     inputs = {
         'topic': 'AI LLMs',
@@ -29,21 +25,12 @@ def run():
     }
     
     try:
-        # Create the Media crew with explicit Anthropic config
-        media_crew = Media().crew()
-        
-        # Set Anthropic as the LLM for all agents
-        for agent in media_crew.agents:
-            agent.llm = {
-                'provider': 'anthropic',
-                'model': os.environ.get('MODEL', 'claude-3-5-sonnet-20240620')
-            }
-        
-        result = media_crew.kickoff(inputs=inputs)
+        from media.crew import Media
+        result = Media().crew().kickoff(inputs=inputs)
         return result
     except Exception as e:
         raise Exception(f"An error occurred while running the crew: {e}")
-
+    
 def train():
     """
     Train the crew for a given number of iterations.
