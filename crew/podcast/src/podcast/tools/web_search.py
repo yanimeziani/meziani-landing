@@ -2,8 +2,6 @@ from crewai.tools import BaseTool
 from typing import Type
 from pydantic import BaseModel, Field
 import json
-import random
-import time
 import os
 import requests
 from datetime import datetime, timedelta
@@ -58,7 +56,7 @@ class WebSearchTool(BaseTool):
             }
             
             # Make the API request
-            response = requests.post(self.base_url, headers=headers, json=data)
+            response = requests.post(self.base_url, headers=headers, json=data, timeout=10)
             response.raise_for_status()
             
             # Process and return the results
