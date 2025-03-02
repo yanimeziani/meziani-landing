@@ -32,5 +32,8 @@ VOLUME /app/data
 # Expose the API port
 EXPOSE 8000
 
+# Set environment variables to be used by crewAI
+ENV ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
 # Run the application
 CMD ["python", "-m", "media_org.main"]
