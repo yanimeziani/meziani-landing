@@ -2,9 +2,11 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.tools import BaseTool
 import json
+import yaml
 from datetime import datetime
 import os
 import dotenv
+import logging
 
 # Load environment variables from .env file if it exists
 dotenv.load_dotenv()
@@ -13,8 +15,30 @@ dotenv.load_dotenv()
 class PodcastCrew():
     """Podcast creation crew"""
 
-    agents_config = 'config/agents.yaml'
-    tasks_config = 'config/tasks.yaml'
+    # Define as property to load dynamically
+    @property
+    def agents_config(self):
+        """Load agents_config from YAML file"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), 'config', 'agents.yaml')
+            with open(config_path, 'r') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            if self.callback:
+                self.callback(f"Failed to load agents config: {str(e)}", "error")
+            return {}
+
+    @property
+    def tasks_config(self):
+        """Load tasks_config from YAML file"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), 'config', 'tasks.yaml')
+            with open(config_path, 'r') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            if self.callback:
+                self.callback(f"Failed to load tasks config: {str(e)}", "error")
+            return {}
     
     # Add a method to ensure config is properly loaded as dict
     def _ensure_config_dict(self, config):
@@ -164,8 +188,11 @@ class PodcastCrew():
     def research_task(self) -> Task:
         from podcast.src.podcast.tools.web_search import WebSearchTool
         
+        # Add debug logging for task config
+        if self.callback:
+            self.callback(f"Tasks config type: {type(self.tasks_config).__name__}", "debug")
+            
         # Bypass the config argument completely and use description directly
-        # This avoids the 'str' object has no attribute 'get' error in CrewAI
         task_config = self.tasks_config.get('research_task', {})
         description = ""
         if isinstance(task_config, dict) and 'description' in task_config:
@@ -174,9 +201,10 @@ class PodcastCrew():
             description = task_config
         else:
             description = f"Research on {self.topic}"
-            
+                
         return Task(
-            description=description,  # Use description directly instead of config
+            # Change this line to pass a dictionary for config instead of direct description
+            config={"description": description},  # Pass as a dict with description key
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             tools=[WebSearchTool()]
@@ -193,9 +221,10 @@ class PodcastCrew():
             description = task_config
         else:
             description = f"Curate topics about {self.topic}"
-            
+                
         return Task(
-            description=description,  # Use description directly instead of config
+            # Use config dictionary here too
+            config={"description": description},
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             expected_output=dict
@@ -212,9 +241,10 @@ class PodcastCrew():
             description = task_config
         else:
             description = f"Write a podcast script in French Quebec style about {self.topic} for hosts {self.hosts[0]} and {self.hosts[1]}"
-            
+                
         return Task(
-            description=description,  # Use description directly instead of config
+            # Use config dictionary here too
+            config={"description": description},
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             expected_output=str
@@ -233,9 +263,10 @@ class PodcastCrew():
             description = task_config
         else:
             description = f"Create audio production guidelines for a French Quebec podcast about {self.topic} using ElevenLabs voices Alex and Simon"
-            
+                
         return Task(
-            description=description,  # Use description directly instead of config
+            # Use config dictionary here too
+            config={"description": description},
             context=[self.topic, str(self.hosts)],
             human_input_callback=self.callback,
             tools=[ElevenLabsTool()],
