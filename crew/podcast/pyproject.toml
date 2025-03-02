@@ -1,0 +1,23 @@
+[project]
+name = "podcast"
+version = "0.1.0"
+description = "podcast using crewAI"
+authors = [{ name = "Yani Meziani", email = "mezianiyani0@gmail.com" }]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "crewai[tools]>=0.102.0,<1.0.0"
+]
+
+[project.scripts]
+podcast = "podcast.main:run"
+run_crew = "podcast.main:run"
+train = "podcast.main:train"
+replay = "podcast.main:replay"
+test = "podcast.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"

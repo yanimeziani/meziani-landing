@@ -186,14 +186,14 @@ fetchPodcasts();
 setInterval(fetchPodcasts, 3000);
 
 // Voice selection functionality
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   const voiceSelectionDiv = document.getElementById('voice-selection');
   const advancedOptionsToggle = document.getElementById('advanced-options-toggle');
   
   // Only run if these elements exist
   if (voiceSelectionDiv && advancedOptionsToggle) {
     // Toggle advanced options
-    advancedOptionsToggle.addEventListener('click', function() {
+    advancedOptionsToggle.addEventListener('click', () => {
       voiceSelectionDiv.classList.toggle('hidden');
       
       // Load voices if showing the section
@@ -223,13 +223,13 @@ document.addEventListener('DOMContentLoaded', function() {
             host2Select.appendChild(autoOption);
             
             // Add all available voices
-            data.voices.forEach(voice => {
+            for (const voice of data.voices) {
               const option = document.createElement('option');
               option.value = voice.name.toLowerCase();
               option.textContent = voice.name;
               host1Select.appendChild(option.cloneNode(true));
               host2Select.appendChild(option);
-            });
+            }
           }
         })
         .catch(error => {
@@ -237,26 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Preview voice buttons
-    document.getElementById('preview-host1')?.addEventListener('click', function() {
-      previewVoice('host1');
-    });
-    
-    document.getElementById('preview-host2')?.addEventListener('click', function() {
-      previewVoice('host2');
-    });
-    
-    // Update host name displays when host input fields change
-    document.getElementById('host1')?.addEventListener('input', function() {
-      document.querySelectorAll('.host1-name').forEach(el => {
-        el.textContent = this.value || 'Host 1';
-      });
-    });
-    
     document.getElementById('host2')?.addEventListener('input', function() {
-      document.querySelectorAll('.host2-name').forEach(el => {
+      for (const el of document.querySelectorAll('.host2-name')) {
         el.textContent = this.value || 'Host 2';
-      });
+      }
     });
     
     // Function to preview a voice

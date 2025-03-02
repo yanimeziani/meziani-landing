@@ -119,7 +119,7 @@ def run_podcast_job(job):
         job.start()
         
         # Import podcast crew - do this here to avoid circular imports
-        from podcast.crew import PodcastCrew
+        from crew.podcast.src.podcast.crew import PodcastCrew
         
         # Research stage
         job.add_update("Starting research on trending topics", "research")
