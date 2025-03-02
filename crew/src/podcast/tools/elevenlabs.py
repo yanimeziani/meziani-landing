@@ -28,6 +28,7 @@ class ElevenLabsTool(BaseTool):
     api_key: str = None
     base_url: str = "https://api.elevenlabs.io/v1"
     voices: dict = None
+    voice_genders: dict = None
     
     def __init__(self, api_key=None):
         """Initialize with optional API key."""
