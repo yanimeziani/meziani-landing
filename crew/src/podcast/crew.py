@@ -149,25 +149,53 @@ class PodcastCrew():
             'current_year': str(os.getenv('CURRENT_YEAR', '2025'))
         }
         
-        # Kickoff the crew and process results
-        result = self.crew().kickoff(inputs=inputs)
-        
-        # Check if result is a string or dictionary
-        if isinstance(result, str):
-            # Handle string result
+        try:
+            # Kickoff the crew and process results
+            result = self.crew().kickoff(inputs=inputs)
+            
+            # Print debug info
             if self.callback:
-                self.callback("Received result as string, processing accordingly", "processing")
+                self.callback(f"Result type: {type(result)}", "debug")
+                self.callback(f"Result content: {str(result)[:200]}...", "debug")
+            
+            # Handle different result types
+            if isinstance(result, str):
+                # Handle string result
+                if self.callback:
+                    self.callback("Received result as string, processing accordingly", "processing")
+                return {
+                    "research": {},
+                    "summary": result,
+                    "script": result,
+                    "audio_details": {}
+                }
+            elif isinstance(result, dict):
+                # Handle dictionary result
+                return {
+                    "research": result.get('research', {}),
+                    "summary": result.get('topic_curation', ''),
+                    "script": result.get('script_writing', ''),
+                    "audio_details": result.get('audio_production', {})
+                }
+            else:
+                # Handle any other type
+                if self.callback:
+                    self.callback(f"Unexpected result type: {type(result)}", "processing")
+                return {
+                    "research": {},
+                    "summary": str(result),
+                    "script": str(result),
+                    "audio_details": {}
+                }
+        except Exception as e:
+            # Log the exception
+            error_msg = f"Error in crew.run(): {str(e)}"
+            if self.callback:
+                self.callback(error_msg, "error")
+            # Return empty results
             return {
                 "research": {},
-                "summary": result,
-                "script": result,
+                "summary": f"Error: {str(e)}",
+                "script": "",
                 "audio_details": {}
-            }
-        else:
-            # Handle dictionary result
-            return {
-                "research": result.get('research', {}),
-                "summary": result.get('topic_curation', ''),
-                "script": result.get('script_writing', ''),
-                "audio_details": result.get('audio_production', {})
             }
