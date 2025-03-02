@@ -35,6 +35,8 @@ jobs:
           echo "CREWAI_CALLBACKS_ENABLED=${{ secrets.CREWAI_CALLBACKS_ENABLED }}" >> .env
           echo "CREWAI_USER_ID=${{ secrets.CREWAI_USER_ID }}" >> .env
           echo "CREWAI_MEMORY_DB_PATH=${{ secrets.CREWAI_MEMORY_DB_PATH }}" >> .env
+          echo "MODEL=${{ secrets.MODEL }}" >> .env
+
           
           # Copy .env file to server
           scp .env ${{ secrets.SSH_USER }}@${{ secrets.HOST }}:~/app/.env
