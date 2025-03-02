@@ -118,6 +118,10 @@ def run_podcast_job(job):
         # Run the crew
         result = crew.run()
         
+        # Check if we got an error result
+        if "summary" in result and result["summary"].startswith("Error:"):
+            raise Exception(result["summary"])
+            
         # Update the job with results
         job.results.update(result)
         job.add_update("Podcast generated successfully", "complete")

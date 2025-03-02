@@ -34,7 +34,7 @@ class PodcastCrew():
                 "config": {
                     "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY'),
+                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
                 }
             }
         )
@@ -49,7 +49,7 @@ class PodcastCrew():
                 "config": {
                     "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY'),
+                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
                 }
             }
         )
@@ -64,7 +64,7 @@ class PodcastCrew():
                 "config": {
                     "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY'),
+                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
                 }
             }
         )
@@ -79,7 +79,7 @@ class PodcastCrew():
                 "config": {
                     "model": os.environ.get('MODEL', 'claude-3-5-sonnet-20240620'),
                     "temperature": 0.7,
-                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY'),
+                    "anthropic_api_key": os.environ.get('ANTHROPIC_API_KEY', 'dummy-key'),
                 }
             }
         )
