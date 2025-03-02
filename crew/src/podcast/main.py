@@ -4,7 +4,7 @@ import warnings
 
 from datetime import datetime
 
-from media.crew import Media
+from podcast.crew import Media
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
@@ -25,7 +25,7 @@ def run():
     }
     
     try:
-        from media.crew import Media
+        from podcast.crew import Media
         result = Media().crew().kickoff(inputs=inputs)
         return result
     except Exception as e:
