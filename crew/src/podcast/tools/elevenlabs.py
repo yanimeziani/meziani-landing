@@ -91,62 +91,22 @@ class ElevenLabsTool(BaseTool):
     
     def get_available_voices(self):
         """Get list of available voices for UI selection"""
-        # Ensure voice_genders exists
-        if not hasattr(self, 'voice_genders') or self.voice_genders is None:
-            self.voice_genders = {
-                "adam": "male",
-                "antoni": "male",
-                "bella": "female",
-                "elli": "female",
-                "josh": "male",
-                "rachel": "female",
-                "sam": "male"
-            }
-            
         voice_options = []
         for name, voice_id in self.voices.items():
-            gender = self.voice_genders.get(name, 'unknown')
             voice_options.append({
                 'id': voice_id,
-                'name': name.capitalize(),
-                'gender': gender
+                'name': name.capitalize()
             })
         return voice_options
     
-    def suggest_voice_for_host(self, host_name, preferred_gender=None):
-        """Suggest a voice for a host based on name and preferred gender"""
-        # Ensure voice_genders exists
-        if not hasattr(self, 'voice_genders') or self.voice_genders is None:
-            self.voice_genders = {
-                "adam": "male",
-                "antoni": "male",
-                "bella": "female",
-                "elli": "female",
-                "josh": "male",
-                "rachel": "female",
-                "sam": "male"
-            }
+    def suggest_voice_for_host(self, host_name, preferred_voice=None):
+        """Suggest a voice for a host"""
+        # If a preferred voice is specified, use it
+        if preferred_voice and preferred_voice in self.voices:
+            return preferred_voice
             
-        # Simple gender detection based on common name endings
-        # This is very simplistic - in production, use a proper name-gender API
-        if not preferred_gender:
-            if host_name.lower().endswith(('a', 'e', 'i')):
-                preferred_gender = 'female'
-            else:
-                preferred_gender = 'male'
-        
-        # Find voices matching the preferred gender
-        matching_voices = [
-            name for name, gender in self.voice_genders.items()
-            if gender == preferred_gender
-        ]
-        
-        if matching_voices:
-            # Return a random matching voice
-            return random.choice(matching_voices)
-        else:
-            # Fallback to any voice
-            return random.choice(list(self.voices.keys()))
+        # Otherwise randomly select a voice
+        return random.choice(list(self.voices.keys()))
     
     def create_voice_preview(self, voice_name, output_dir="data/podcasts/previews"):
         """Create a voice preview for UI selection"""

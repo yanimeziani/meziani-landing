@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add auto option
             const autoOption = document.createElement('option');
             autoOption.value = 'auto';
-            autoOption.textContent = 'Auto-select appropriate voice';
+            autoOption.textContent = 'Auto-select voice';
             host1Select.appendChild(autoOption.cloneNode(true));
             host2Select.appendChild(autoOption);
             
